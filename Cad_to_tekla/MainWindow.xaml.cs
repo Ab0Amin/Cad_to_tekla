@@ -61,12 +61,50 @@ namespace Cad_to_tekla
 
         private void tb_browesRef_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog DWg_fileDialog = new OpenFileDialog();
-            //DWg_fileDialog.Filter = "*.DWg";
-            DWg_fileDialog.ShowDialog();
-            DWg_fileDialog.RestoreDirectory = true;
-             tx_refPath.Text = DWg_fileDialog.FileName;
-            
+            getRefrenceModelPath();
+
+        }
+
+    
+
+        private void tb_ref_Click(object sender, RoutedEventArgs e)
+        {
+            ReferenceModel referenceModel = new ReferenceModel();
+            if (tx_refPath.Text !="")
+            {
+                referenceModel.Filename = tx_refPath.Text;
+                referenceModel.Position = new t3d.Point();
+                referenceModel.Rotation = 0;
+                referenceModel.Scale = double.Parse(tx_refScale.Text);
+                referenceModel.Insert();
+                CoordinateSystem coordinateSystem_xy = new CoordinateSystem();
+                coordinateSystem_xy.AxisX = new t3d.Vector(1, 0, 0);
+                coordinateSystem_xy.AxisY = new t3d.Vector(0, 1, 0);
+              
+               
+                if (cb_vl_hz.SelectedIndex ==1)
+                {
+                    CoordinateSystem coordinateSystem_xz = new CoordinateSystem();
+                    coordinateSystem_xz.AxisX = new t3d.Vector(1, 0, 0);
+                    coordinateSystem_xz.AxisY = new t3d.Vector(0, 0, 1);
+                    Operation.MoveObject(referenceModel, coordinateSystem_xy, coordinateSystem_xz);
+                }
+                else if (cb_vl_hz.SelectedIndex == 2)
+                {
+                    CoordinateSystem coordinateSystem_yz = new CoordinateSystem();
+                    coordinateSystem_yz.AxisX = new t3d.Vector(0, 0, 1);
+                    coordinateSystem_yz.AxisY = new t3d.Vector(0, 1, 0);
+                    Operation.MoveObject(referenceModel, coordinateSystem_xy, coordinateSystem_yz);
+                }
+                TeklaModel.CommitChanges();
+                
+            }
+            else
+            {
+                System.Windows.Forms.MessageBox.Show("Please select a valid Path","",MessageBoxButtons.OK,MessageBoxIcon.Error);
+                getRefrenceModelPath();
+
+            }
         }
 
         private void SelcetedRadioButtom_Checked(object sender, RoutedEventArgs e)
@@ -85,6 +123,8 @@ namespace Cad_to_tekla
           
 
         }
+
+     
 
         private List<string> GetAttributeFiles(string fileExtn)
         {
@@ -158,8 +198,15 @@ namespace Cad_to_tekla
             files.Sort();
             return files;
         }
-  
 
+        private void getRefrenceModelPath()
+        {
+            OpenFileDialog DWg_fileDialog = new OpenFileDialog();
+            //DWg_fileDialog.Filter = "*.DWg";
+            DWg_fileDialog.ShowDialog();
+            DWg_fileDialog.RestoreDirectory = true;
+            tx_refPath.Text = DWg_fileDialog.FileName;
+        }
 
     }
 }
