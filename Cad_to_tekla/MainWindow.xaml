@@ -9,10 +9,7 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="766.388" Width="800"
     >
-    <Window.Resources>
-        <local:RadioConverter x:Key="ageConverter"/>
-    </Window.Resources>
-
+  
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="0*"/>
@@ -60,8 +57,8 @@
 
 
         </DataGrid>
-        <Button x:Name="tb_browesRef" Content="Browes" HorizontalAlignment="Left" Margin="274,41,0,0" VerticalAlignment="Top" Width="58" RenderTransformOrigin="-0.145,3.45" Grid.Column="1"/>
-        <TextBox Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="23" Margin="120,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="136" RenderTransformOrigin="0.478,-0.196"/>
+        <Button x:Name="tb_browesRef" Content="Browes" HorizontalAlignment="Left" Margin="274,41,0,0" VerticalAlignment="Top" Width="58" RenderTransformOrigin="-0.145,3.45" Grid.Column="1" Click="tb_browesRef_Click"/>
+        <TextBox x:Name="tx_refPath" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="23" Margin="120,41,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="136" RenderTransformOrigin="0.478,-0.196"/>
         <TextBox Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="23" Margin="120,131,0,0" TextWrapping="Wrap" Text="20" VerticalAlignment="Top" Width="62" RenderTransformOrigin="0.415,4.022"/>
         <Label Grid.ColumnSpan="2" Content="Plan" HorizontalAlignment="Left" Margin="50,77,0,0" VerticalAlignment="Top"/>
         <Label Grid.ColumnSpan="2" Content="Scale" HorizontalAlignment="Left" Margin="52,128,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.189,0.731"/>

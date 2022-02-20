@@ -23,6 +23,7 @@ using Tekla.Structures.Model.UI;
 using Tekla.Structures.Solid;
 using System.IO;
 using System.Threading;
+using System.Windows.Forms;
 
 namespace Cad_to_tekla
 {
@@ -58,13 +59,15 @@ namespace Cad_to_tekla
            
         }
 
-        private void tb_addRow_Click(object sender, RoutedEventArgs e)
+        private void tb_browesRef_Click(object sender, RoutedEventArgs e)
         {
-           
-
+            OpenFileDialog DWg_fileDialog = new OpenFileDialog();
+            //DWg_fileDialog.Filter = "*.DWg";
+            DWg_fileDialog.ShowDialog();
+            DWg_fileDialog.RestoreDirectory = true;
+             tx_refPath.Text = DWg_fileDialog.FileName;
+            
         }
-
-     
 
         private void SelcetedRadioButtom_Checked(object sender, RoutedEventArgs e)
         {
