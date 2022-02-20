@@ -1,0 +1,16 @@
+D:\tekla\applications\Cad_to_tekla\Cad_to_tekla\bin\Debug\Cad_to_tekla.exe.config
+D:\tekla\applications\Cad_to_tekla\Cad_to_tekla\bin\Debug\Cad_to_tekla.exe
+D:\tekla\applications\Cad_to_tekla\Cad_to_tekla\bin\Debug\Cad_to_tekla.pdb
+D:\tekla\applications\Cad_to_tekla\ObjDir\2017i\Cad_to_tekla\Cad_to_tekla.csprojAssemblyReference.cache
+D:\tekla\applications\Cad_to_tekla\ObjDir\2017i\Cad_to_tekla\MainWindow.g.cs
+D:\tekla\applications\Cad_to_tekla\ObjDir\2017i\Cad_to_tekla\App.g.cs
+D:\tekla\applications\Cad_to_tekla\ObjDir\2017i\Cad_to_tekla\GeneratedInternalTypeHelper.g.cs
+D:\tekla\applications\Cad_to_tekla\ObjDir\2017i\Cad_to_tekla\Cad_to_tekla_MarkupCompile.cache
+D:\tekla\applications\Cad_to_tekla\ObjDir\2017i\Cad_to_tekla\Cad_to_tekla_MarkupCompile.lref
+D:\tekla\applications\Cad_to_tekla\ObjDir\2017i\Cad_to_tekla\MainWindow.baml
+D:\tekla\applications\Cad_to_tekla\ObjDir\2017i\Cad_to_tekla\Cad_to_tekla.g.resources
+D:\tekla\applications\Cad_to_tekla\ObjDir\2017i\Cad_to_tekla\Cad_to_tekla.Properties.Resources.resources
+D:\tekla\applications\Cad_to_tekla\ObjDir\2017i\Cad_to_tekla\Cad_to_tekla.csproj.GenerateResource.cache
+D:\tekla\applications\Cad_to_tekla\ObjDir\2017i\Cad_to_tekla\Cad_to_tekla.csproj.CoreCompileInputs.cache
+D:\tekla\applications\Cad_to_tekla\ObjDir\2017i\Cad_to_tekla\Cad_to_tekla.exe
+D:\tekla\applications\Cad_to_tekla\ObjDir\2017i\Cad_to_tekla\Cad_to_tekla.pdb

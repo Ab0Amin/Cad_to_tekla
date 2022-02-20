@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -8,67 +9,33 @@ using System.Windows.Data;
 
 namespace Cad_to_tekla
 {
-    internal class DataGridItems
+    internal class DataGridItems : INotifyPropertyChanged
     {
        public string Symbol { set; get; }
         public string TeklaProfiles { set; get; }
-        public string select { set; get; }
+        public string Material { set; get; }
+        public List<string> BeamAtt { set; get; }
+        private bool _IsDefault;
 
+        public event PropertyChangedEventHandler PropertyChanged;
 
-
-
-        public object Convert(object value, Type targetType,
-                            object parameter, CultureInfo culture)
+        public bool IsDefault
         {
-            if (value == null || parameter == null)
-                return false;
-
-            string checkValue = value.ToString();
-            string targetValue = parameter.ToString();
-            return checkValue.Equals(targetValue,
-                     StringComparison.InvariantCultureIgnoreCase);
+            get
+            {
+                return _IsDefault;
+            }
+            set
+            {
+                _IsDefault = value;
+            }
         }
 
-        public object ConvertBack(object value, Type targetType,
-                                  object parameter, CultureInfo culture)
-        {
-            if (value == null || parameter == null)
-                return null;
-
-            bool useValue = (bool)value;
-            string targetValue = parameter.ToString();
-            if (useValue)
-                return Enum.Parse(targetType, targetValue);
-
-            return null;
-        }
+     
     }
-    public class EnumMatchToBooleanConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType,
-                              object parameter, CultureInfo culture)
-        {
-            if (value == null || parameter == null)
-                return false;
+   
 
-            string checkValue = value.ToString();
-            string targetValue = parameter.ToString();
-            return checkValue.Equals(targetValue,
-                     StringComparison.InvariantCultureIgnoreCase);
-        }
-
-        public object ConvertBack(object value, Type targetType,
-                                  object parameter, CultureInfo culture)
-        {
-            if (value == null || parameter == null)
-                return null;
-
-            bool useValue = (bool)value;
-            string targetValue = parameter.ToString();
-            if (useValue)
-                return Enum.Parse(targetType, targetValue);
-
-            return null;
-        }
     }
-}
+
+
+      
