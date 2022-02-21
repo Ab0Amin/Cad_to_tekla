@@ -54,7 +54,7 @@ namespace Cad_to_tekla
         public MainWindow()
         {
             InitializeComponent();
-           
+            cachedData = new List<string>();
             attributePath = System.IO.Path.Combine(TeklaModel.GetInfo().ModelPath, "attributes");
             modelPath = TeklaModel.GetInfo().ModelPath;
             getCachedData(modelPath+"//cachedData.ibim");
@@ -73,7 +73,6 @@ namespace Cad_to_tekla
             global_X =  new t3d.Vector(1, 0, 0);
             global_Y=  new t3d.Vector(0, 1, 0);
             global_Z=  new t3d.Vector(0, 0, 1);
-            cachedData = new List<string>();
 
             viewModel = new ViewModel {
 
@@ -91,43 +90,9 @@ namespace Cad_to_tekla
            
         }
 
-        private void tb_load_Click(object sender, RoutedEventArgs e)
-        {
-            string filep = "c:\\cache\\cacheText1.tb";
+      
 
-            getCachedData(filep);
-
-        }
-
-        private void getCachedData(string filep)
-        {
-            if (File.Exists(filep))
-            {
-                string[] loadedData;
-                List<DataGridItems> gridItems = new List<DataGridItems>();
-
-                cachedData = File.ReadAllLines(filep).ToList<string>();
-                for (int i = 0; i < cachedData.Count; i++)
-                {
-                    string current = cachedData[i];
-                    loadedData = current.Split(',');
-
-                    DataGridItems item = new DataGridItems
-                    {
-                        TeklaProfiles = loadedData[1],
-                        Symbol = loadedData[0],
-                        Material = loadedData[2]
-                    };
-                    gridItems.Add(item);
-
-                }
-
-
-
-                dt_data.ItemsSource = gridItems;
-
-            }
-        }
+       
 
         private void tb_browesRef_Click(object sender, RoutedEventArgs e)
         {
@@ -141,6 +106,8 @@ namespace Cad_to_tekla
 
         }
 
+      
+
         private void tb_modifyModel_Click(object sender, RoutedEventArgs e)
         {
 
@@ -152,7 +119,7 @@ namespace Cad_to_tekla
             TeklaModel.CommitChanges();
 
         }
-
+       
         private ReferenceModel insertRefrenceModel(string _referencePath,t3d.Point _referenceOrgin,  int _referenceRotaion , double _refenceScale)
         {
             _referenceRotaion = 0;
@@ -201,7 +168,7 @@ namespace Cad_to_tekla
 
         private void SelcetedRadioButtom_Checked(object sender, RoutedEventArgs e)
         {
-            IEnumerable<DataGridItems> selected_items = viewModel.dataGridItems;
+            IEnumerable<DataGridItems> selected_items = (List<DataGridItems>)dt_data.ItemsSource;
             for (int i = 0; i < selected_items.Count(); i++)
             {
                 DataGridItems element = selected_items.ElementAt(i);
@@ -305,6 +272,8 @@ namespace Cad_to_tekla
 
         private void cacheData(string filep)
         {
+            cachedData.Clear();
+
             if (File.Exists(filep))
             {
 
@@ -314,8 +283,7 @@ namespace Cad_to_tekla
               FileStream fileStream= File.Create(filep);
                 fileStream.Close();
             }
-            IEnumerable<DataGridItems> data = viewModel.dataGridItems;
-
+            List<DataGridItems> data = (List<DataGridItems>) dt_data.ItemsSource;
             for (int i = 0; i < data.Count(); i++)
             {
                 DataGridItems element = data.ElementAt(i);
@@ -324,6 +292,35 @@ namespace Cad_to_tekla
             File.WriteAllLines(filep, cachedData.ToArray());
 
         }
+        private void getCachedData(string filep)
+        {
+            cachedData.Clear();
+            if (File.Exists(filep))
+            {
+                string[] loadedData;
+                List<DataGridItems> gridItems = new List<DataGridItems>();
 
+                cachedData = File.ReadAllLines(filep).ToList<string>();
+                for (int i = 0; i < cachedData.Count; i++)
+                {
+                    string current = cachedData[i];
+                    loadedData = current.Split(',');
+
+                    DataGridItems item = new DataGridItems
+                    {
+                        TeklaProfiles = loadedData[1],
+                        Symbol = loadedData[0],
+                        Material = loadedData[2]
+                    };
+                    gridItems.Add(item);
+
+                }
+
+
+
+                dt_data.ItemsSource = gridItems;
+
+            }
+        }
     }
 }
