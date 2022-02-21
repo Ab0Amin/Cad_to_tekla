@@ -37,7 +37,7 @@ namespace Cad_to_tekla
         Model TeklaModel = new Model();
 
         #region Parameters
-        string profile, material, symbol ,referencePath;
+        string attributePath,modelPath, profile, material, symbol ,referencePath ;
         int referenceRotaion = 0;
         ReferenceModel referenceModel;
         Picker input;
@@ -46,6 +46,7 @@ namespace Cad_to_tekla
         double refenceScale;
         t3d.Vector global_X, global_Y, global_Z;
         byte referenceDir_selectedIndix;
+        List<string> cachedData;
         #endregion
 
         private readonly ViewModel viewModel;
@@ -54,7 +55,10 @@ namespace Cad_to_tekla
         {
             InitializeComponent();
            
-            
+            attributePath = System.IO.Path.Combine(TeklaModel.GetInfo().ModelPath, "attributes");
+            modelPath = TeklaModel.GetInfo().ModelPath;
+            getCachedData(modelPath+"//cachedData.ibim");
+
             cm_beamAtt.ItemsSource = GetAttributeFiles("*.prt");
             #region generate new objects
 
@@ -69,6 +73,8 @@ namespace Cad_to_tekla
             global_X =  new t3d.Vector(1, 0, 0);
             global_Y=  new t3d.Vector(0, 1, 0);
             global_Z=  new t3d.Vector(0, 0, 1);
+            cachedData = new List<string>();
+
             viewModel = new ViewModel {
 
                 dataGridItems = new List<DataGridItems>()
@@ -85,13 +91,60 @@ namespace Cad_to_tekla
            
         }
 
-        private void tb_browesRef_Click(object sender, RoutedEventArgs e)
+        private void tb_load_Click(object sender, RoutedEventArgs e)
         {
-            getRefrenceModelPath();
+            string filep = "c:\\cache\\cacheText1.tb";
+
+            getCachedData(filep);
 
         }
 
-    
+        private void getCachedData(string filep)
+        {
+            if (File.Exists(filep))
+            {
+                string[] loadedData;
+                List<DataGridItems> gridItems = new List<DataGridItems>();
+
+                cachedData = File.ReadAllLines(filep).ToList<string>();
+                for (int i = 0; i < cachedData.Count; i++)
+                {
+                    string current = cachedData[i];
+                    loadedData = current.Split(',');
+
+                    DataGridItems item = new DataGridItems
+                    {
+                        TeklaProfiles = loadedData[1],
+                        Symbol = loadedData[0],
+                        Material = loadedData[2]
+                    };
+                    gridItems.Add(item);
+
+                }
+
+
+
+                dt_data.ItemsSource = gridItems;
+
+            }
+        }
+
+        private void tb_browesRef_Click(object sender, RoutedEventArgs e)
+        {
+            getRefrenceattributePath();
+
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            cacheData(modelPath + "//cachedData.ibim");
+
+        }
+
+        private void tb_modifyModel_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
 
         private void tb_ref_Click(object sender, RoutedEventArgs e)
         {
@@ -140,7 +193,7 @@ namespace Cad_to_tekla
             else
             {
                 System.Windows.Forms.MessageBox.Show("Please select a valid Path", "", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                getRefrenceModelPath();
+                getRefrenceattributePath();
 
             }
             return referenceModel;
@@ -172,8 +225,7 @@ namespace Cad_to_tekla
         private List<string> GetAttributeFiles(string fileExtn)
         {
             List<string> files = new List<string>();
-            string modelPath = System.IO.Path.Combine(TeklaModel.GetInfo().ModelPath, "attributes");
-            List<string> localAttributes = Directory.GetFiles(modelPath, fileExtn).ToList();
+            List<string> localAttributes = Directory.GetFiles(attributePath, fileExtn).ToList();
 
             string firmPath = "";
             TeklaStructuresSettings.GetAdvancedOption("XS_FIRM", ref firmPath);
@@ -242,13 +294,35 @@ namespace Cad_to_tekla
             return files;
         }
 
-        private void getRefrenceModelPath()
+        private void getRefrenceattributePath()
         {
             OpenFileDialog DWg_fileDialog = new OpenFileDialog();
             //DWg_fileDialog.Filter = "*.DWg";
             DWg_fileDialog.ShowDialog();
             DWg_fileDialog.RestoreDirectory = true;
             tx_refPath.Text = DWg_fileDialog.FileName;
+        }
+
+        private void cacheData(string filep)
+        {
+            if (File.Exists(filep))
+            {
+
+            }
+            else
+            {
+              FileStream fileStream= File.Create(filep);
+                fileStream.Close();
+            }
+            IEnumerable<DataGridItems> data = viewModel.dataGridItems;
+
+            for (int i = 0; i < data.Count(); i++)
+            {
+                DataGridItems element = data.ElementAt(i);
+                cachedData.Add(element.Symbol + ","+ element.TeklaProfiles + ","+element.Material);
+            }
+            File.WriteAllLines(filep, cachedData.ToArray());
+
         }
 
     }
