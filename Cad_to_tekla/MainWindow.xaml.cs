@@ -24,6 +24,8 @@ using Tekla.Structures.Solid;
 using System.IO;
 using System.Threading;
 using System.Windows.Forms;
+using System.Text.RegularExpressions;
+using System.Runtime.Caching;
 
 namespace Cad_to_tekla
 {
@@ -35,15 +37,38 @@ namespace Cad_to_tekla
         Model TeklaModel = new Model();
 
         #region Parameters
-        string profile, material, symbol;
+        string profile, material, symbol ,referencePath;
+        int referenceRotaion = 0;
+        ReferenceModel referenceModel;
+        Picker input;
+        t3d.Point referenceOrgin;
+        CoordinateSystem coordinateSystem_xz, coordinateSystem_xy;
+        double refenceScale;
+        t3d.Vector global_X, global_Y, global_Z;
+        byte referenceDir_selectedIndix;
         #endregion
 
-       private readonly ViewModel viewModel;
+        private readonly ViewModel viewModel;
 
         public MainWindow()
         {
             InitializeComponent();
+           
+            
             cm_beamAtt.ItemsSource = GetAttributeFiles("*.prt");
+            #region generate new objects
+
+
+            input = new Picker();
+            referenceModel = new ReferenceModel();
+            coordinateSystem_xz = new CoordinateSystem();
+            coordinateSystem_xy = new CoordinateSystem();
+            referencePath = tx_refPath.Text;
+            refenceScale = double.Parse(tx_refScale.Text);
+            referenceDir_selectedIndix = (byte)cb_vl_hz.SelectedIndex;
+            global_X =  new t3d.Vector(1, 0, 0);
+            global_Y=  new t3d.Vector(0, 1, 0);
+            global_Z=  new t3d.Vector(0, 0, 1);
             viewModel = new ViewModel {
 
                 dataGridItems = new List<DataGridItems>()
@@ -55,6 +80,7 @@ namespace Cad_to_tekla
                 }
 
             };
+            #endregion
             this.DataContext = this.viewModel;
            
         }
@@ -69,42 +95,55 @@ namespace Cad_to_tekla
 
         private void tb_ref_Click(object sender, RoutedEventArgs e)
         {
-            ReferenceModel referenceModel = new ReferenceModel();
-            if (tx_refPath.Text !="")
+            insertRefrenceModel( referencePath,  referenceOrgin, referenceRotaion, refenceScale);
+            TeklaModel.CommitChanges();
+
+        }
+
+        private ReferenceModel insertRefrenceModel(string _referencePath,t3d.Point _referenceOrgin,  int _referenceRotaion , double _refenceScale)
+        {
+            _referenceRotaion = 0;
+            _referenceOrgin = input.PickPoint();
+            if (_referencePath != "")
             {
-                referenceModel.Filename = tx_refPath.Text;
-                referenceModel.Position = new t3d.Point();
-                referenceModel.Rotation = 0;
-                referenceModel.Scale = double.Parse(tx_refScale.Text);
+                referenceModel.Filename = _referencePath;
+                referenceModel.Position = _referenceOrgin;
+                referenceModel.Rotation = _referenceRotaion;
+                referenceModel.Scale = _refenceScale;
                 referenceModel.Insert();
-                CoordinateSystem coordinateSystem_xy = new CoordinateSystem();
-                coordinateSystem_xy.AxisX = new t3d.Vector(1, 0, 0);
-                coordinateSystem_xy.AxisY = new t3d.Vector(0, 1, 0);
-              
-               
-                if (cb_vl_hz.SelectedIndex ==1)
+
+                coordinateSystem_xy.AxisX = global_X;
+                coordinateSystem_xy.AxisY = global_Y;
+
+
+                if (referenceDir_selectedIndix != 0)
                 {
-                    CoordinateSystem coordinateSystem_xz = new CoordinateSystem();
-                    coordinateSystem_xz.AxisX = new t3d.Vector(1, 0, 0);
-                    coordinateSystem_xz.AxisY = new t3d.Vector(0, 0, 1);
+
+                    coordinateSystem_xz.AxisX = global_X;
+                    coordinateSystem_xz.AxisY = global_Z;
                     Operation.MoveObject(referenceModel, coordinateSystem_xy, coordinateSystem_xz);
                 }
-                else if (cb_vl_hz.SelectedIndex == 2)
+                if (referenceDir_selectedIndix == 2)
                 {
-                    CoordinateSystem coordinateSystem_yz = new CoordinateSystem();
-                    coordinateSystem_yz.AxisX = new t3d.Vector(0, 0, 1);
-                    coordinateSystem_yz.AxisY = new t3d.Vector(0, 1, 0);
-                    Operation.MoveObject(referenceModel, coordinateSystem_xy, coordinateSystem_yz);
+                    _referenceRotaion = 90;
                 }
-                TeklaModel.CommitChanges();
-                
+                if (cb_flip.IsChecked == true)
+                {
+                    _referenceRotaion += 180;
+                }
+                referenceModel.Rotation = _referenceRotaion;
+                referenceModel.Position = _referenceOrgin;
+                referenceModel.Modify();
+
+
             }
             else
             {
-                System.Windows.Forms.MessageBox.Show("Please select a valid Path","",MessageBoxButtons.OK,MessageBoxIcon.Error);
+                System.Windows.Forms.MessageBox.Show("Please select a valid Path", "", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 getRefrenceModelPath();
 
             }
+            return referenceModel;
         }
 
         private void SelcetedRadioButtom_Checked(object sender, RoutedEventArgs e)
@@ -124,7 +163,11 @@ namespace Cad_to_tekla
 
         }
 
-     
+        private void tx_refScale_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            Regex regex = new Regex("[^0-9]+");
+            e.Handled = regex.IsMatch(e.Text);
+        }
 
         private List<string> GetAttributeFiles(string fileExtn)
         {
