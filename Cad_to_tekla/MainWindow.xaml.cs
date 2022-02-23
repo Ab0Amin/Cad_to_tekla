@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 using System.Data;
 using System.Collections;
 using Tekla.Structures;
+using td= Tekla.Structures.Drawing;
 using Tekla.Structures.Geometry3d;
 using t3d = Tekla.Structures.Geometry3d;
 using Tekla.Structures.Model;
@@ -26,18 +27,33 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using System.Runtime.Caching;
+using Microsoft.Win32.SafeHandles;
+using Render;
+using System.Runtime.InteropServices;
+
 
 namespace Cad_to_tekla
 {
+   
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
+        //[DllImport("USER32.DLL", CharSet = CharSet.Unicode)]
+        //public static extern IntPtr FindWindow(string lpClassName,
+        //  string lpWindowName);
+
+        //// Activate an application window.
+        //[DllImport("USER32.DLL")]
+        //public static extern bool SetForegroundWindow(IntPtr hWnd);
+
         Model TeklaModel = new Model();
+        delegate void EnableButtoms(bool enable);
 
         #region Parameters
-        string attributePath,modelPath, profile, material, symbol ,referencePath ;
+        string attributePath,modelPath, profile, material, symbol ,referencePath , selectedAttribure;
         int referenceRotaion = 0;
         ReferenceModel referenceModel;
         Picker input;
@@ -47,6 +63,14 @@ namespace Cad_to_tekla
         t3d.Vector global_X, global_Y, global_Z;
         byte referenceDir_selectedIndix;
         List<string> cachedData;
+      static  bool continueInsertingBeams;
+        Tekla.Structures.Model.UI.ModelObjectSelector modelObjectSelector;
+        ArrayList insertedBeamArrayList;
+        MacroBuilder macroBuilder;
+       
+
+        //public event EventHandler MiddleClick;
+        Thread thread;
         #endregion
 
         private readonly ViewModel viewModel;
@@ -60,20 +84,24 @@ namespace Cad_to_tekla
             getCachedData(modelPath+"//cachedData.ibim");
 
             cm_beamAtt.ItemsSource = GetAttributeFiles("*.prt");
+            cb_vl_hz.SelectedIndex = 0;
+
             #region generate new objects
 
+            thread = new Thread(pickingLinesThread);
 
             input = new Picker();
             referenceModel = new ReferenceModel();
             coordinateSystem_xz = new CoordinateSystem();
             coordinateSystem_xy = new CoordinateSystem();
-            referencePath = tx_refPath.Text;
-            refenceScale = double.Parse(tx_refScale.Text);
-            referenceDir_selectedIndix = (byte)cb_vl_hz.SelectedIndex;
+         
             global_X =  new t3d.Vector(1, 0, 0);
             global_Y=  new t3d.Vector(0, 1, 0);
             global_Z=  new t3d.Vector(0, 0, 1);
 
+            modelObjectSelector = new Tekla.Structures.Model.UI.ModelObjectSelector();
+            insertedBeamArrayList = new ArrayList();
+            
             viewModel = new ViewModel {
 
                 dataGridItems = new List<DataGridItems>()
@@ -87,9 +115,12 @@ namespace Cad_to_tekla
             };
             #endregion
             this.DataContext = this.viewModel;
-           
-        }
+            IMainWindow window = TeklaStructures.MainWindow;
 
+            Loaded += delegate { Mouse.AddMouseDownHandler(this, new System.Windows.Input.MouseButtonEventHandler(midgelMouseClick)); }; 
+
+
+              }
       
 
        
@@ -113,14 +144,156 @@ namespace Cad_to_tekla
 
         }
 
+        private void tb_PickLines_Click(object sender, RoutedEventArgs e)
+        {
+            thread = new Thread(pickingLinesThread);
+            thread.IsBackground = true;
+            thread.Start();
+            //try
+            //{
+            //    thread.Start();
+            //}
+            //catch (Exception)
+            //{
+               
+
+            //}
+
+
+        }
+        void pickingLinesThread()
+        {
+            continueInsertingBeams = true;
+            try
+            {
+                Dispatcher.BeginInvoke(new EnableButtoms(Disable_Enable_bottoms), new object[] { false });
+                insertBeam();
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+        private void Disable_Enable_bottoms(bool enable)
+        {
+            tb_PickLines.IsEnabled = enable;
+            tb_pickProfile.IsEnabled = enable;
+            tb_modifyModel.IsEnabled = enable;
+            tb_ref.IsEnabled = enable;
+        }
+        private  void insertBeam()
+        {
+            try
+            {
+                while (continueInsertingBeams)
+                {
+                    if (profile == null )
+                    {
+                        System.Windows.Forms.MessageBox.Show("Please select a valid Profile first");
+                        Dispatcher.BeginInvoke(new EnableButtoms(Disable_Enable_bottoms), new object[] { true });
+
+                        break;
+                    }
+                    else
+                    {
+                        if ( TeklaStructures.Connect())
+                        {
+                            ArrayList line = input.PickLine();
+                            Beam beam = new Beam(Beam.BeamTypeEnum.BEAM);
+                        
+
+                            beam.Profile.ProfileString = profile;
+                            beam.Material.MaterialString = material;
+                            beam.StartPoint = line[0] as t3d.Point;
+                            beam.EndPoint = line[1] as t3d.Point;
+                            beam.Insert();
+                           
+                            insertedBeamArrayList.Add(beam);
+                            modelObjectSelector.Select(insertedBeamArrayList);
+
+                            macroBuilder = new MacroBuilder();
+                            macroBuilder.Callback("acmd_display_selected_object_dialog", "", "View_01 window_1");
+                            macroBuilder.ValueChange("part_attrib", "get_menu", selectedAttribure);
+                            macroBuilder.PushButton("attrib_get", "part_attrib");
+                            macroBuilder.ValueChange("part_attrib", "profile", profile);
+                            macroBuilder.ValueChange("part_attrib", "material", material);
+                            macroBuilder.PushButton("dia_pa_modify", "part_attrib");
+                            macroBuilder.PushButton("dia_pa_cancel", "part_attrib");
+                            macroBuilder.Run();
+                            macroBuilder = null;
+                            insertedBeamArrayList.Clear();
+                            TeklaModel.CommitChanges(); 
+                        }
+                        
+                    }
+                   
+                }
+            }
+           catch (Exception)
+            {
+                Dispatcher.BeginInvoke(new EnableButtoms(Disable_Enable_bottoms), new object[] { true });
+
+
+            }
+        }
+
+        private void Window_MouseDown(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            continueInsertingBeams = false;
+            thread.Abort();
+            
+        }
+
         private void tb_ref_Click(object sender, RoutedEventArgs e)
         {
+            referencePath = tx_refPath.Text;
+            refenceScale = double.Parse(tx_refScale.Text);
+            referenceDir_selectedIndix = (byte)cb_vl_hz.SelectedIndex;
             insertRefrenceModel( referencePath,  referenceOrgin, referenceRotaion, refenceScale);
             TeklaModel.CommitChanges();
 
         }
-       
-        private ReferenceModel insertRefrenceModel(string _referencePath,t3d.Point _referenceOrgin,  int _referenceRotaion , double _refenceScale)
+
+     
+
+        private void cm_beamAtt_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            selectedAttribure = cm_beamAtt.SelectedItem.ToString();
+
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            
+
+        }
+
+        private void SelcetedRadioButtom_Checked(object sender, RoutedEventArgs e)
+        {
+            IEnumerable<DataGridItems> selected_items = (List<DataGridItems>)dt_data.ItemsSource;
+            for (int i = 0; i < selected_items.Count(); i++)
+            {
+                DataGridItems element = selected_items.ElementAt(i);
+                if (element.IsDefault ==true)
+                {
+                    profile = element.TeklaProfiles;
+                    material = element.Material;
+                    symbol = element.Symbol;
+                    //MessageBox.Show(element.TeklaProfiles);
+                }
+            }
+            
+            
+          
+
+        }
+
+        private void tx_refScale_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            Regex regex = new Regex("[^0-9]+");
+            e.Handled = regex.IsMatch(e.Text);
+        }
+        private ReferenceModel insertRefrenceModel(string _referencePath, t3d.Point _referenceOrgin, int _referenceRotaion, double _refenceScale)
         {
             _referenceRotaion = 0;
             _referenceOrgin = input.PickPoint();
@@ -164,29 +337,6 @@ namespace Cad_to_tekla
 
             }
             return referenceModel;
-        }
-
-        private void SelcetedRadioButtom_Checked(object sender, RoutedEventArgs e)
-        {
-            IEnumerable<DataGridItems> selected_items = (List<DataGridItems>)dt_data.ItemsSource;
-            for (int i = 0; i < selected_items.Count(); i++)
-            {
-                DataGridItems element = selected_items.ElementAt(i);
-                if (element.IsDefault ==true)
-                {
-                    //MessageBox.Show(element.TeklaProfiles);
-                }
-            }
-            
-            
-          
-
-        }
-
-        private void tx_refScale_PreviewTextInput(object sender, TextCompositionEventArgs e)
-        {
-            Regex regex = new Regex("[^0-9]+");
-            e.Handled = regex.IsMatch(e.Text);
         }
 
         private List<string> GetAttributeFiles(string fileExtn)
@@ -322,5 +472,17 @@ namespace Cad_to_tekla
 
             }
         }
+
+
+        private void midgelMouseClick(object sender, RoutedEventArgs e)
+        {
+            continueInsertingBeams = false;
+            if (thread.IsAlive)
+            {
+                thread.Interrupt();
+
+            }
+        }
+        
     }
 }

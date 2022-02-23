@@ -7,7 +7,7 @@
         xmlns:local="clr-namespace:Cad_to_tekla"
         xmlns:System="clr-namespace:System;assembly=mscorlib" x:Class="Cad_to_tekla.MainWindow"
         mc:Ignorable="d"
-        Title="MainWindow" Height="766.388" Width="800" Closed="Window_Closed"
+        Title="MainWindow" Height="766.388" Width="800" Closed="Window_Closed" Topmost="True"
     >
 
     <Grid>
@@ -16,7 +16,7 @@
             <ColumnDefinition Width="685*"/>
         </Grid.ColumnDefinitions>
         <Button x:Name="tb_ref" Content="Insert Reference" HorizontalAlignment="Left" Margin="117,155,0,0" VerticalAlignment="Top" Width="104" RenderTransformOrigin="-0.145,3.45" Grid.Column="1" Click="tb_ref_Click"/>
-        <Button x:Name="tb_PickLines" Content="Pcik lines" HorizontalAlignment="Left" Margin="106,470,0,0" VerticalAlignment="Top" Width="76" RenderTransformOrigin="0.882,4" Grid.Column="1"/>
+        <Button x:Name="tb_PickLines" Content="Pcik lines" HorizontalAlignment="Left" Margin="106,470,0,0" VerticalAlignment="Top" Width="76" RenderTransformOrigin="0.882,4" Grid.Column="1" Click="tb_PickLines_Click"/>
         <Button x:Name="tb_modifyModel" Content="Modify Model" HorizontalAlignment="Left" Margin="292,626,0,0" VerticalAlignment="Top" Width="120" RenderTransformOrigin="2.717,19.575" Grid.Column="1" Height="40" Click="tb_modifyModel_Click"/>
         <Button x:Name="tb_pickProfile" Content="Pick Profile" HorizontalAlignment="Left" Margin="400,526,0,0" VerticalAlignment="Top" Width="76" Grid.Column="1"/>
         <ComboBox x:Name="cb_vl_hz" HorizontalAlignment="Left" Margin="92,81,0,0" VerticalAlignment="Top" Width="136" Grid.Column="1">
@@ -24,7 +24,7 @@
             <System:String>XZ PLAN</System:String>
             <System:String>YZ PLAN</System:String>
         </ComboBox>
-        <ComboBox x:Name="cm_beamAtt" HorizontalAlignment="Left" Margin="148,420,0,0" VerticalAlignment="Top" Width="184" Grid.Column="1" BindingGroup ="{Binding BeamAtt}" />
+        <ComboBox x:Name="cm_beamAtt" HorizontalAlignment="Left" Margin="148,420,0,0" VerticalAlignment="Top" Width="184" Grid.Column="1" BindingGroup ="{Binding BeamAtt}" SelectionChanged="cm_beamAtt_SelectionChanged" />
 
         <DataGrid x:Name="dt_data" VerticalScrollBarVisibility="Auto" ItemsSource="{Binding dataGridItems}"    Grid.Column="1" AutoGenerateColumns="False" AlternatingRowBackground="Gray" 
                   RowHeight="20" Margin="361,67,0,245" BorderThickness="3" Width="400" HorizontalAlignment="Left">
@@ -37,7 +37,7 @@
                         <DataTemplate>
                             <RadioButton x:Name="SelcetedRadioButtom" Width="20"    GroupName="status" Checked="SelcetedRadioButtom_Checked"
                                              IsChecked="{Binding IsDefault ,UpdateSourceTrigger=PropertyChanged}"
-                                             Background="AliceBlue">
+                                             Background="AliceBlue" >
                             </RadioButton>
 
                         </DataTemplate>
@@ -63,6 +63,7 @@
         <Label Grid.ColumnSpan="2" Content="Path" HorizontalAlignment="Left" Margin="14,38,0,0" VerticalAlignment="Top"/>
         <Label Grid.ColumnSpan="2" Content="Beam Attributes" HorizontalAlignment="Left" Margin="26,420,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.189,0.731" Width="94"/>
         <CheckBox x:Name="cb_flip" Grid.ColumnSpan="2" Content="Flip" HorizontalAlignment="Left" Margin="170,121,0,0" VerticalAlignment="Top"/>
+        <Button Grid.ColumnSpan="2" Content="Button" HorizontalAlignment="Left" Margin="621,651,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
 
     </Grid>
 </Window>
