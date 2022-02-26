@@ -5,9 +5,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Cad_to_tekla"
-        xmlns:System="clr-namespace:System;assembly=mscorlib" x:Class="Cad_to_tekla.MainWindow"
+        xmlns:System="clr-namespace:System;assembly=mscorlib" x:Name="w_mainWindow" x:Class="Cad_to_tekla.MainWindow"
         mc:Ignorable="d"
-        Title="MainWindow" Height="766.388" Width="800" Closed="Window_Closed" Topmost="True"
+        Title="MainWindow" Height="766.388" Width="800" Closed="Window_Closed" Topmost="True" Loaded="Window_Loaded"
     >
 
     <Grid>

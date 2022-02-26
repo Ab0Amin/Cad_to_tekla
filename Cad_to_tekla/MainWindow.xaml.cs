@@ -77,50 +77,57 @@ namespace Cad_to_tekla
 
         public MainWindow()
         {
-            InitializeComponent();
-            cachedData = new List<string>();
-            attributePath = System.IO.Path.Combine(TeklaModel.GetInfo().ModelPath, "attributes");
-            modelPath = TeklaModel.GetInfo().ModelPath;
-            getCachedData(modelPath+"//cachedData.ibim");
+            if (!TeklaModel.GetConnectionStatus())
+            { }
+                  
+            else
+            {
+                InitializeComponent();
+                cachedData = new List<string>();
+                attributePath = System.IO.Path.Combine(TeklaModel.GetInfo().ModelPath, "attributes");
+                modelPath = TeklaModel.GetInfo().ModelPath;
+                getCachedData(modelPath + "//cachedData.ibim");
 
-            cm_beamAtt.ItemsSource = GetAttributeFiles("*.prt");
-            cb_vl_hz.SelectedIndex = 0;
+                cm_beamAtt.ItemsSource = GetAttributeFiles("*.prt");
+                cb_vl_hz.SelectedIndex = 0;
 
-            #region generate new objects
+                #region generate new objects
 
-            thread = new Thread(pickingLinesThread);
+                thread = new Thread(pickingLinesThread);
 
-            input = new Picker();
-            referenceModel = new ReferenceModel();
-            coordinateSystem_xz = new CoordinateSystem();
-            coordinateSystem_xy = new CoordinateSystem();
-         
-            global_X =  new t3d.Vector(1, 0, 0);
-            global_Y=  new t3d.Vector(0, 1, 0);
-            global_Z=  new t3d.Vector(0, 0, 1);
+                input = new Picker();
+                referenceModel = new ReferenceModel();
+                coordinateSystem_xz = new CoordinateSystem();
+                coordinateSystem_xy = new CoordinateSystem();
 
-            modelObjectSelector = new Tekla.Structures.Model.UI.ModelObjectSelector();
-            insertedBeamArrayList = new ArrayList();
-            
-            viewModel = new ViewModel {
+                global_X = new t3d.Vector(1, 0, 0);
+                global_Y = new t3d.Vector(0, 1, 0);
+                global_Z = new t3d.Vector(0, 0, 1);
 
-                dataGridItems = new List<DataGridItems>()
+                modelObjectSelector = new Tekla.Structures.Model.UI.ModelObjectSelector();
+                insertedBeamArrayList = new ArrayList();
+
+                viewModel = new ViewModel
                 {
-                //new DataGridItems
-                //{
-                //    BeamAtt = GetAttributeFiles("*.prt")
-                //}
-                }
 
-            };
-            #endregion
-            this.DataContext = this.viewModel;
-            IMainWindow window = TeklaStructures.MainWindow;
+                    dataGridItems = new List<DataGridItems>()
+                    {
+                        //new DataGridItems
+                        //{
+                        //    BeamAtt = GetAttributeFiles("*.prt")
+                        //}
+                    }
 
-            Loaded += delegate { Mouse.AddMouseDownHandler(this, new System.Windows.Input.MouseButtonEventHandler(midgelMouseClick)); }; 
+                };
+                #endregion
+                this.DataContext = this.viewModel;
+                IMainWindow window = TeklaStructures.MainWindow;
 
+                Loaded += delegate { Mouse.AddMouseDownHandler(this, new System.Windows.Input.MouseButtonEventHandler(midgelMouseClick)); };
 
-              }
+            }
+
+        }
       
 
        
@@ -262,10 +269,265 @@ namespace Cad_to_tekla
 
         }
 
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (!TeklaModel.GetConnectionStatus())
+            {
+                System.Windows.Forms.MessageBox.Show("Please Open Tekla model first");
+                w_mainWindow.Close();
+            }
+        }
+
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            
 
+            List<Beam> columns;
+            List<Beam> beams;
+            List<Beam> hzBracing; 
+            List<Beam> vlBracing;
+
+
+
+            ModelObjectEnumerator allModelBeams = TeklaModel.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.BEAM);
+
+            //categorizeMocelObject( allModelBeams,out columns, out beams, out hzBracing, out vlBracing);
+
+            Part p = input.PickObject(Picker.PickObjectEnum.PICK_ONE_PART) as Part;
+            //int x= p.Identifier.ID;
+
+            double tolerance = 500;
+            Solid partsolid = p.GetSolid();
+            t3d.Point p1 = new t3d.Point(partsolid.MinimumPoint.X - tolerance, partsolid.MinimumPoint.Y - tolerance, partsolid.MinimumPoint.Z - tolerance);
+            t3d.Point p2 = new t3d.Point(partsolid.MaximumPoint.X + tolerance, partsolid.MaximumPoint.Y + tolerance, partsolid.MaximumPoint.Z + tolerance);
+
+
+
+            ModelObjectEnumerator me2 = TeklaModel.GetModelObjectSelector().GetObjectsByBoundingBox(p1, p2);
+            categorizeMocelObject(me2, out columns, out beams, out hzBracing, out vlBracing);
+
+
+            //while (me2.MoveNext())
+            //{
+            //    Beam b = me2.Current as Beam;
+            //    if (b != null)
+            //    {
+
+            //        insertedBeamArrayList.Add(b);
+
+            //    }
+
+
+            //}
+            //modelObjectSelector.Select(insertedBeamArrayList);
+            //insertedBeamArrayList.Clear();
+            Phase columnPhase = new Phase();
+            columnPhase.PhaseName = "columns";
+            columnPhase.PhaseNumber = 2000001;
+            columnPhase.Insert();
+
+
+            Phase beamsPhase = new Phase();
+            beamsPhase.PhaseName = "beams";
+            beamsPhase.PhaseNumber = 2000002;
+
+            beamsPhase.Insert();
+
+            Phase hzPhase = new Phase();
+            hzPhase.PhaseName = "HZ";
+            hzPhase.PhaseNumber = 2000003;
+
+            hzPhase.Insert();
+
+
+            Phase vlPhase = new Phase();
+            vlPhase.PhaseName = "VL";
+            vlPhase.PhaseNumber = 2000004;
+            vlPhase.Insert();
+
+            foreach (Beam item in columns)
+            {
+                item.SetPhase(columnPhase);
+                item.Modify();
+
+            }
+            foreach (Beam item in beams)
+            {
+                item.SetPhase(beamsPhase);
+                item.Modify();
+
+
+            }
+            foreach (Beam item in hzBracing)
+            {
+                item.SetPhase(hzPhase);
+                item.Modify();
+
+
+            }
+            foreach (Beam item in vlBracing)
+            {
+                item.SetPhase(vlPhase);
+                item.Modify();
+
+
+            }
+            TeklaModel.CommitChanges();
+        }
+
+        private static void categorizeMocelObject(ModelObjectEnumerator ModelBeams,out List<Beam> columns, out List<Beam> beams, out List<Beam> hzBracing, out List<Beam> vlBracing)
+        {
+         columns = new List<Beam>();
+         beams = new List<Beam>();
+            hzBracing = new List<Beam>();
+           vlBracing = new List<Beam>();
+
+            while (ModelBeams.MoveNext())
+            {
+                Beam current = ModelBeams.Current as Beam;
+                if (current != null)
+                {
+                    if (is_column(current))
+                    {
+                        columns.Add(current);
+                    }
+                    else if (is_beam(current))
+                    {
+                        beams.Add(current);
+                    }
+                    else if (is_hzBracing(current))
+                    {
+                        hzBracing.Add(current);
+                    }
+                    else if (is_vlBracing(current))
+                    {
+                        vlBracing.Add(current);
+                    }
+
+
+
+                }
+            }
+            //columns1 = columns;
+            //beams1 = beams;
+            //hzBracing1 = hzBracing;
+            //vlBracing1 = vlBracing;
+        }
+
+        private static bool is_column( Beam beam)
+        {
+            
+            if (!beam.Profile.ProfileString.Contains("PL"))
+            {
+                ArrayList centerPoints = beam.GetCenterLine(false);
+                t3d.Point c1 = centerPoints[0] as t3d.Point;
+                t3d.Point c2 = centerPoints[1] as t3d.Point;
+                if ((c1.X == c2.X) && (c1.Y == c2.Y) && c1.Z != c2.Z)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+                centerPoints = null;
+                c1 = null;
+                c2 = null;
+            }
+            else
+            {
+                return false;
+            }
+           
+
+        }
+
+
+        private static bool is_beam(Beam beam)
+        {
+
+            if (!beam.Profile.ProfileString.Contains("PL"))
+            {
+                ArrayList centerPoints = beam.GetCenterLine(false);
+                t3d.Point c1 = centerPoints[0] as t3d.Point;
+                t3d.Point c2 = centerPoints[1] as t3d.Point;
+                if (((c1.X == c2.X) && (c1.Y != c2.Y) && c1.Z == c2.Z)|| ((c1.X != c2.X) && (c1.Y == c2.Y) && c1.Z == c2.Z))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+                centerPoints = null;
+                c1 = null;
+                c2 = null;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private static bool is_hzBracing(Beam beam)
+        {
+
+            if (!beam.Profile.ProfileString.Contains("PL"))
+            {
+                ArrayList centerPoints = beam.GetCenterLine(false);
+                t3d.Point c1 = centerPoints[0] as t3d.Point;
+                t3d.Point c2 = centerPoints[1] as t3d.Point;
+                if ((c1.X != c2.X) && (c1.Y != c2.Y) && c1.Z == c2.Z) 
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+                centerPoints = null;
+                c1 = null;
+                c2 = null;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private static bool is_vlBracing(Beam beam)
+        {
+
+            if (!beam.Profile.ProfileString.Contains("PL"))
+            {
+                ArrayList centerPoints = beam.GetCenterLine(false);
+                t3d.Point c1 = centerPoints[0] as t3d.Point;
+                t3d.Point c2 = centerPoints[1] as t3d.Point;
+                if (((c1.X == c2.X) && (c1.Y != c2.Y) && c1.Z != c2.Z) || ((c1.X != c2.X) && (c1.Y == c2.Y) && c1.Z != c2.Z))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+                centerPoints = null;
+                c1 = null;
+                c2 = null;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private static void checkwithBeam(t3d.Point p1, t3d.Point p2)
+        {
+            Beam bb = new Beam();
+            bb.Profile.ProfileString = "UB406*140*46";
+            bb.Class = "3";
+            bb.StartPoint = p1;
+            bb.EndPoint = p2;
+            bb.Insert();
         }
 
         private void SelcetedRadioButtom_Checked(object sender, RoutedEventArgs e)
@@ -422,24 +684,33 @@ namespace Cad_to_tekla
 
         private void cacheData(string filep)
         {
-            cachedData.Clear();
+            try
+            {
+                if (cachedData !=null)
+                {
+                    cachedData.Clear();
+                }
+                if (File.Exists(filep))
+                {
 
-            if (File.Exists(filep))
+                }
+                else
+                {
+                    FileStream fileStream = File.Create(filep);
+                    fileStream.Close();
+                }
+                List<DataGridItems> data = (List<DataGridItems>)dt_data.ItemsSource;
+                for (int i = 0; i < data.Count(); i++)
+                {
+                    DataGridItems element = data.ElementAt(i);
+                    cachedData.Add(element.Symbol + "," + element.TeklaProfiles + "," + element.Material);
+                }
+                File.WriteAllLines(filep, cachedData.ToArray());
+            }
+            catch (Exception)
             {
 
             }
-            else
-            {
-              FileStream fileStream= File.Create(filep);
-                fileStream.Close();
-            }
-            List<DataGridItems> data = (List<DataGridItems>) dt_data.ItemsSource;
-            for (int i = 0; i < data.Count(); i++)
-            {
-                DataGridItems element = data.ElementAt(i);
-                cachedData.Add(element.Symbol + ","+ element.TeklaProfiles + ","+element.Material);
-            }
-            File.WriteAllLines(filep, cachedData.ToArray());
 
         }
         private void getCachedData(string filep)
