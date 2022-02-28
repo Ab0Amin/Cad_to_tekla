@@ -770,7 +770,7 @@ namespace Cad_to_tekla
 
         private void Button_Click1(object sender, RoutedEventArgs e)
         {
-
+			
         }
 
         private static bool is_vlBracing(Beam beam)
