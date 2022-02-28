@@ -14,6 +14,8 @@ namespace Cad_to_tekla
        public string Symbol { set; get; }
         public string TeklaProfiles { set; get; }
         public string Material { set; get; }
+        public string CurrentTeklaProfiles { set; get; }
+        public string CurrentMaterial { set; get; }
         public List<string> BeamAtt { set; get; }
         private bool _IsDefault;
 
