@@ -30,7 +30,9 @@ using System.Runtime.Caching;
 using Microsoft.Win32.SafeHandles;
 using Render;
 using System.Runtime.InteropServices;
-
+using Tekla.Structures.Dialog.UIControls;
+using Tekla.Structures.Catalogs;
+using System.ComponentModel;
 
 namespace Cad_to_tekla
 {
@@ -39,7 +41,7 @@ namespace Cad_to_tekla
 	/// <summary>
 	/// Interaction logic for MainWindow.xaml
 	/// </summary>
-	public partial class MainWindow : Window
+	public partial class MainWindow : Window 
 	{
 		//[DllImport("USER32.DLL", CharSet = CharSet.Unicode)]
 		//public static extern IntPtr FindWindow(string lpClassName,
@@ -51,15 +53,18 @@ namespace Cad_to_tekla
 
 		Model TeklaModel = new Model();
 		delegate void EnableButtoms(bool enable);
+		delegate void updatePresetage(string pres);
+
+		BackgroundWorker worker = new BackgroundWorker();
 
 		#region Parameters
 		string attributePath,modelPath, profile, material, symbol ,referencePath , selectedAttribure;
-		int referenceRotaion = 0;
+		int referenceRotaion = 0, allModelBeamsSize;
 		ReferenceModel referenceModel;
 		Picker input;
 		t3d.Point referenceOrgin;
 		CoordinateSystem coordinateSystem_xz, coordinateSystem_xy;
-		double refenceScale;
+		double refenceScale, pro_counter = 0;
 		t3d.Vector global_X, global_Y, global_Z;
 		byte referenceDir_selectedIndix;
 		List<string> cachedData;
@@ -94,6 +99,13 @@ namespace Cad_to_tekla
 				#region generate new objects
 
 				thread = new Thread(pickingLinesThread);
+
+
+				worker.RunWorkerCompleted += worker_runworkerComplete;
+				worker.WorkerReportsProgress = true;
+				worker.DoWork += worker_DoWork;
+				worker.ProgressChanged += worker_ProgressChanged;
+				//worker.RunWorkerAsync();
 
 				input = new Picker();
 				referenceModel = new ReferenceModel();
@@ -150,33 +162,15 @@ namespace Cad_to_tekla
 	  
 
 		private void tb_modifyModel_Click(object sender, RoutedEventArgs e)
-		{
-			TeklaModel.GetWorkPlaneHandler().SetCurrentTransformationPlane(new TransformationPlane());
-			Beam CurrentPart;
-
-
-			modifiedHZ.Clear();
-			modifiedVL.Clear();
-			modifiedColumns.Clear();
-			modifiedBeams.Clear();
-			ModelObjectEnumerator allModelBeams = TeklaModel.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.BEAM);
-			while (allModelBeams.MoveNext())
-			{
-				CurrentPart = allModelBeams.Current as Beam;
-				if (CurrentPart != null)
-				{
-					modifyCurrentPart(CurrentPart,500);
-				}
-			}
-
-			System.Windows.Forms.MessageBox.Show("Done");
-
-			putModifiedObbjectsInPhase();
-
-			TeklaModel.CommitChanges();
+        {
+			pro_modify.Visibility = Visibility.Visible;
+			tx_progressbarPres.Visibility = Visibility.Visible;
+			worker.RunWorkerAsync();
 		}
 
-		private void tb_PickLines_Click(object sender, RoutedEventArgs e)
+   
+
+        private void tb_PickLines_Click(object sender, RoutedEventArgs e)
 		{
 			thread = new Thread(pickingLinesThread);
 			thread.IsBackground = true;
@@ -205,6 +199,10 @@ namespace Cad_to_tekla
 			{
 
 			}
+		}
+		private void update_progressbar_presentage(string presentage)
+		{
+			tx_progressbarPres.Content = presentage ;
 		}
 		private void Disable_Enable_bottoms(bool enable)
 		{
@@ -407,11 +405,11 @@ namespace Cad_to_tekla
                 for (int i = 0; i < beams.Count; i++)
                 {
                     currentMainBeam = beams[i];
-                    done = modifyBeamToBeam(CurrentPart, currentMainBeam, tolerance) + done;
+                    done = modifyBeamToBeam(CurrentPart, currentMainBeam, tolerance,0) + done;
 
                 }
 
-                if (done == 0)
+                if (done == 0 || done == 1)
                 {
                     for (int i = 0; i < columns.Count; i++)
                     {
@@ -420,7 +418,16 @@ namespace Cad_to_tekla
 
                     }
                 }
-                if (done>0)
+                if (done ==0)
+                {
+					for (int i = 0; i < beams.Count; i++)
+					{
+						currentMainBeam = beams[i];
+						done = modifyBeamToBeam(CurrentPart, currentMainBeam, tolerance, 1) + done;
+
+					}
+				}
+				if (done>0)
                 {
 					modifiedBeams.Add(CurrentPart);
 				}
@@ -430,11 +437,11 @@ namespace Cad_to_tekla
                 for (int i = 0; i < beams.Count; i++)
                 {
                     currentMainBeam = beams[i];
-                    done = modifyBeamToBeam(CurrentPart, currentMainBeam, tolerance) + done;
+                    done = modifyBeamToBeam(CurrentPart, currentMainBeam, tolerance,0) + done;
 
                 }
 
-                if (done == 0)
+                if (done == 0 || done == 1)
                 {
                     for (int i = 0; i < columns.Count; i++)
                     {
@@ -443,7 +450,16 @@ namespace Cad_to_tekla
 
                     }
                 }
-                if (done>0)
+				if (done == 0 || done == 1)
+				{
+					for (int i = 0; i < beams.Count; i++)
+					{
+						currentMainBeam = beams[i];
+						done = modifyBeamToBeam(CurrentPart, currentMainBeam, tolerance, 1) + done;
+
+					}
+				}
+				if (done>0)
                 {
 					modifiedHZ.Add(CurrentPart);
 				}
@@ -453,18 +469,28 @@ namespace Cad_to_tekla
                 for (int i = 0; i < beams.Count; i++)
                 {
                     currentMainBeam = beams[i];
-                    done = modifyBeamToBeam(CurrentPart, currentMainBeam, tolerance) + done;
+                    done = modifyBeamToBeam(CurrentPart, currentMainBeam, tolerance,0) + done;
 
                 }
-                if (done == 0)
+                if (done == 0 || done == 1)
                 {
                     for (int i = 0; i < hzBracing.Count; i++)
                     {
                         currentBracing = hzBracing[i];
-						done = modifyBeamToBeam(CurrentPart, currentBracing, tolerance)+done;
+						done = modifyBeamToBeam(CurrentPart, currentBracing, tolerance,0)+done;
 
                     }
                 }
+
+				if (done == 0 || done == 1)
+				{
+					for (int i = 0; i < beams.Count; i++)
+					{
+						currentMainBeam = beams[i];
+						done = modifyBeamToBeam(CurrentPart, currentMainBeam, tolerance, 1) + done;
+
+					}
+				}
 				if (done > 0)
 				{
 					modifiedColumns.Add(CurrentPart);
@@ -475,17 +501,29 @@ namespace Cad_to_tekla
                 for (int i = 0; i < beams.Count; i++)
                 {
                     currentMainBeam = beams[i];
-					done = modifyBeamToBeam(CurrentPart, currentMainBeam, tolerance) + done;
+					done = modifyBeamToBeam(CurrentPart, currentMainBeam, tolerance,0) + done;
 
 				}
 
-
-                for (int i = 0; i < columns.Count; i++)
+                if (done == 0 || done == 1)
                 {
-                    currentMColumn = columns[i];
-					done = modifyBeamToBeam(CurrentPart, currentMColumn, tolerance) + done;
+
+                    for (int i = 0; i < columns.Count; i++)
+                    {
+                        currentMColumn = columns[i];
+                        done = modifyBeamToBeam(CurrentPart, currentMColumn, tolerance, 0) + done;
+                    } 
+                }
+				if (done == 0 || done == 1)
+				{
+					for (int i = 0; i < beams.Count; i++)
+					{
+						currentMainBeam = beams[i];
+						done = modifyBeamToBeam(CurrentPart, currentMainBeam, tolerance, 1) + done;
+
+					}
 				}
-				if (done > 0)
+					if (done > 0)
 				{
 					modifiedVL.Add(CurrentPart);
 				}
@@ -493,14 +531,19 @@ namespace Cad_to_tekla
 			return done;
         }
 
-        private int modifyBeamToBeam(Beam ModifiedBeam, Beam mainBeam, double tolerance)
+        private int modifyBeamToBeam(Beam ModifiedBeam, Beam mainBeam, double tolerance , int num)
 		{
 			int modified = 0;
+			int pointsWithSoild=1;
+			bool startModify = false;
 			CoordinateSystem currentSecBeam_coordinateSystem = ModifiedBeam.GetCoordinateSystem();
 			t3d.Vector X_secBeam = currentSecBeam_coordinateSystem.AxisX;
 			X_secBeam.Normalize();
 			t3d.Point startPoint_SecBeam = ModifiedBeam.StartPoint;
 			t3d.Point EndPoint_SecBeam = ModifiedBeam.EndPoint;
+
+		
+			
 
 			Solid mainBeamSoild = mainBeam.GetSolid();
 
@@ -512,48 +555,70 @@ namespace Cad_to_tekla
 
 			t3d.Point intersectedStarttPoint_1 = Intersection.LineSegmentToPlane(beamLine, geometricPlane_mainBeam_1);
 			t3d.Point intersectedStarttPoint_2 = Intersection.LineSegmentToPlane(beamLine, geometricPlane_mainBeam_2);
+            if (num ==0)
+            {
+				 pointsWithSoild = mainBeamSoild.Intersect(beamLine).Count;
+				startModify = true;
+			}
+            else
+            {
+				double height = 0;
+				mainBeam.GetReportProperty("HEIGHT", ref height);
 
+				ArrayList mainBeamPoints = mainBeam.GetCenterLine(false);
 
-			int pointsWithSoild = 1;
-				//mainBeamSoild.Intersect(beamLine).Count;
-			if (intersectedStarttPoint_1 !=null && pointsWithSoild > 0)
-			{
-				//fitBeam(ModifiedBeam, MainBeam_coordinateSystem.Origin , MainBeam_coordinateSystem.AxisX, MainBeam_coordinateSystem.AxisY);
-				if (Distance.PointToPoint(intersectedStarttPoint_1, startPoint_SecBeam) < tolerance)
-				{
-					ModifiedBeam.StartPoint = intersectedStarttPoint_1;
-					ModifiedBeam.Modify();
-					modified +=1;
-					colorhBeam(mainBeam);
-				}
-				else if (Distance.PointToPoint(intersectedStarttPoint_1, EndPoint_SecBeam) < tolerance)
-				{
-					ModifiedBeam.EndPoint = intersectedStarttPoint_1;
-					ModifiedBeam.Modify();
-					modified += 1;
-					colorhBeam(mainBeam);
-
+				t3d.Point startPoint_mainBeamn = mainBeamPoints[0] as t3d.Point;
+				t3d.Point EndPoint_mainBeam = mainBeamPoints[1] as t3d.Point;
+				double dis = Math.Abs(startPoint_mainBeamn.Z - startPoint_SecBeam.Z);
+				if (dis <height)
+                {
+					pointsWithSoild = 1;
+					startModify = true;
 				}
 			}
-			if (intersectedStarttPoint_2!= null && pointsWithSoild > 0)
-			{
-				if (Distance.PointToPoint(intersectedStarttPoint_2, startPoint_SecBeam) < tolerance)
-				{
-					ModifiedBeam.StartPoint = intersectedStarttPoint_2;
-					ModifiedBeam.Modify();
-					modified += 1;
-					colorhBeam(mainBeam);
 
-				}
-				else if (Distance.PointToPoint(intersectedStarttPoint_2, EndPoint_SecBeam) < tolerance)
-				{
-					ModifiedBeam.EndPoint = intersectedStarttPoint_2;
-					ModifiedBeam.Modify();
-					modified += 1;
-					colorhBeam(mainBeam);
 
-				}
-			}
+            if (startModify)
+            {
+                if (intersectedStarttPoint_1 != null && pointsWithSoild > 0)
+                {
+                    //fitBeam(ModifiedBeam, MainBeam_coordinateSystem.Origin , MainBeam_coordinateSystem.AxisX, MainBeam_coordinateSystem.AxisY);
+                    if (Distance.PointToPoint(intersectedStarttPoint_1, startPoint_SecBeam) < tolerance)
+                    {
+                        ModifiedBeam.StartPoint = intersectedStarttPoint_1;
+                        ModifiedBeam.Modify();
+                        modified += 1;
+                        colorhBeam(mainBeam);
+                    }
+                    else if (Distance.PointToPoint(intersectedStarttPoint_1, EndPoint_SecBeam) < tolerance)
+                    {
+                        ModifiedBeam.EndPoint = intersectedStarttPoint_1;
+                        ModifiedBeam.Modify();
+                        modified += 1;
+                        colorhBeam(mainBeam);
+
+                    }
+                }
+                if (intersectedStarttPoint_2 != null && pointsWithSoild > 0)
+                {
+                    if (Distance.PointToPoint(intersectedStarttPoint_2, startPoint_SecBeam) < tolerance)
+                    {
+                        ModifiedBeam.StartPoint = intersectedStarttPoint_2;
+                        ModifiedBeam.Modify();
+                        modified += 1;
+                        colorhBeam(mainBeam);
+
+                    }
+                    else if (Distance.PointToPoint(intersectedStarttPoint_2, EndPoint_SecBeam) < tolerance)
+                    {
+                        ModifiedBeam.EndPoint = intersectedStarttPoint_2;
+                        ModifiedBeam.Modify();
+                        modified += 1;
+                        colorhBeam(mainBeam);
+
+                    }
+                } 
+            }
 
 			return modified;
 
@@ -564,47 +629,62 @@ namespace Cad_to_tekla
 			CoordinateSystem currentSecBeam_coordinateSystem = ModifiedBeam.GetCoordinateSystem();
 			t3d.Vector X_secBeam = currentSecBeam_coordinateSystem.AxisX;
 			X_secBeam.Normalize();
+		
+			
 			t3d.Point startPoint_SecBeam = ModifiedBeam.StartPoint;
 			t3d.Point EndPoint_SecBeam = ModifiedBeam.EndPoint;
-			t3d.Point startPoint_column = column.StartPoint;
 			
+			
+			ArrayList columnPoints = column.GetCenterLine(false);
+			
+			t3d.Point startPoint_column = columnPoints[0] as t3d.Point;
+			t3d.Point EndPoint_column = columnPoints[1] as t3d.Point;
+
 			t3d.Point newStartPoint = new t3d.Point(startPoint_column.X, startPoint_column.Y, startPoint_SecBeam.Z);
+		
+			//Solid mainBeamSoild = column.GetSolid();
+			//t3d.LineSegment beamLine = new t3d.LineSegment(startPoint_SecBeam - tolerance * X_secBeam, EndPoint_SecBeam + tolerance * X_secBeam);
 
 
-			Solid mainBeamSoild = column.GetSolid();
-			t3d.LineSegment beamLine = new t3d.LineSegment(startPoint_SecBeam - tolerance * X_secBeam, EndPoint_SecBeam + tolerance * X_secBeam);
-
-
-            if (mainBeamSoild.Intersect(beamLine).Count>0)
+            if (startPoint_SecBeam.X - startPoint_column.X <1 || startPoint_SecBeam.Y - startPoint_column.Y < 1)
             {
-                if (Distance.PointToPoint(startPoint_SecBeam, newStartPoint) < tolerance)
+                if (startPoint_SecBeam.Z > startPoint_column.Z && startPoint_SecBeam.Z > EndPoint_column.Z + tolerance / 2)
                 {
 
-                    t3d.Vector resultVector = new t3d.Vector(startPoint_SecBeam - newStartPoint);
-                    resultVector.Normalize();
-                    if (resultVector == X_secBeam || resultVector * -1 == X_secBeam)
+					double ST = Distance.PointToPoint(startPoint_SecBeam, newStartPoint);
+					double ED = Distance.PointToPoint(EndPoint_SecBeam, newStartPoint);
+
+                 
+
+					if (ST < ED && ST < tolerance)
                     {
-                        ModifiedBeam.StartPoint = newStartPoint;
-                        ModifiedBeam.Modify();
-						done += 1;
+
+                        t3d.Vector resultVector = new t3d.Vector(startPoint_SecBeam - newStartPoint);
+                        resultVector.Normalize();
+                        if (resultVector == X_secBeam || resultVector * -1 == X_secBeam)
+                        {
+                            ModifiedBeam.StartPoint = newStartPoint;
+                            ModifiedBeam.Modify();
+                            done += 1;
+                        }
+
                     }
-
-                }
-                else if (Distance.PointToPoint(EndPoint_SecBeam, newStartPoint) < tolerance)
-                {
-
-                    t3d.Vector resultVector = new t3d.Vector(EndPoint_SecBeam - newStartPoint);
-                    resultVector.Normalize();
-                    if (resultVector == X_secBeam || resultVector * -1 == X_secBeam)
+                    else if (ED < tolerance)
                     {
-                        ModifiedBeam.EndPoint = newStartPoint;
-                        ModifiedBeam.Modify();
-						done += 1;
-					}
 
-				} 
+                        t3d.Vector resultVector = new t3d.Vector(EndPoint_SecBeam - newStartPoint);
+                        resultVector.Normalize();
+                        if (resultVector == X_secBeam || resultVector * -1 == X_secBeam)
+                        {
+                            ModifiedBeam.EndPoint = newStartPoint;
+                            ModifiedBeam.Modify();
+                            done += 1;
+                        }
+
+                    }
+                }
+
             }
-
 
 
 
@@ -768,10 +848,7 @@ namespace Cad_to_tekla
 			}
 		}
 
-        private void Button_Click1(object sender, RoutedEventArgs e)
-        {
-			
-        }
+       
 
         private static bool is_vlBracing(Beam beam)
 		{
@@ -811,10 +888,10 @@ namespace Cad_to_tekla
 		}
 		private static void colorhBeam(Beam bb)
 		{
-			
-			//bb.Class = "0";
-			//bb.Modify();
-		}
+
+            bb.Class = "0";
+            bb.Modify();
+        }
 		private static void fitBeam(Beam bb, t3d.Point p,t3d.Vector x ,t3d.Vector y )
 		{
 			Fitting fitting = new Fitting();
@@ -1053,6 +1130,93 @@ namespace Cad_to_tekla
 
 			}
 		}
-		
+		private void Button_Click1(object sender, RoutedEventArgs e)
+        {
+
+            //for (int i = 0; i < 100; i++)
+            //{
+            //	pro_modify.Value++;
+            //	Thread.Sleep(100);
+            //}
+            allModelBeamsSize = 920;
+            pro_counter = 0;
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.RunWorkerCompleted += worker_runworkerComplete;
+            worker.WorkerReportsProgress = true;
+            //worker.DoWork += worker_DoWork;
+            worker.ProgressChanged += worker_ProgressChanged;
+            worker.RunWorkerAsync();
+
+         
+        }
+
+    
+
+        private void worker_runworkerComplete(object sender, RunWorkerCompletedEventArgs e)
+        {
+            pro_modify.Value = 0;
+			pro_modify.Visibility = Visibility.Hidden;
+			tx_progressbarPres.Visibility = Visibility.Hidden;
+        }
+	
+        void worker_DoWork(object sender, DoWorkEventArgs e)
+        {
+			pro_counter =0;
+			int i = 0;
+			TeklaModel.GetWorkPlaneHandler().SetCurrentTransformationPlane(new TransformationPlane());
+			Beam CurrentPart;
+
+
+			modifiedHZ.Clear();
+			modifiedVL.Clear();
+			modifiedColumns.Clear();
+			modifiedBeams.Clear();
+			ModelObjectEnumerator allModelBeams = TeklaModel.GetModelObjectSelector().GetAllObjectsWithType(ModelObject.ModelObjectEnum.BEAM);
+
+			allModelBeamsSize = allModelBeams.GetSize();
+
+
+
+
+			while (allModelBeams.MoveNext())
+			{
+				CurrentPart = allModelBeams.Current as Beam;
+				if (CurrentPart != null)
+				{
+                    modifyCurrentPart(CurrentPart, 500);
+                    TeklaModel.CommitChanges();
+                }
+				pro_counter ++;
+
+                if ((allModelBeamsSize / 100)*(i+1)< pro_counter&& i<100)
+                {
+					i++;
+                }
+				(sender as BackgroundWorker).ReportProgress(i);
+				
+				try
+				{
+					Dispatcher.BeginInvoke(new updatePresetage(update_progressbar_presentage), new object[] { i.ToString() + "% "});
+					
+				}
+				catch (Exception)
+				{
+
+				}
+			}
+
+
+			putModifiedObbjectsInPhase();
+
+			TeklaModel.CommitChanges();
+			System.Windows.Forms.MessageBox.Show("Done");
+
+
+		}
+
+		void worker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+		{
+			pro_modify.Value = e.ProgressPercentage;
+		}
 	}
 }

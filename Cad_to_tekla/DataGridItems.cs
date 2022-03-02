@@ -32,8 +32,23 @@ namespace Cad_to_tekla
                 _IsDefault = value;
             }
         }
+        private int _WorkState;
 
-     
+
+        private int pro_counter
+        {
+            get { return _WorkState; }
+            set
+            {
+                _WorkState = value;
+                if (PropertyChanged != null)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs("WorkState"));
+
+                }
+            }
+        }
+
     }
    
 
