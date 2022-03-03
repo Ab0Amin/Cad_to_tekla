@@ -17,6 +17,7 @@ namespace Cad_to_tekla
         public string CurrentTeklaProfiles { set; get; }
         public string CurrentMaterial { set; get; }
         public List<string> BeamAtt { set; get; }
+        public List<string> panelAtt { set; get; }
         private bool _IsDefault;
 
         public event PropertyChangedEventHandler PropertyChanged;
