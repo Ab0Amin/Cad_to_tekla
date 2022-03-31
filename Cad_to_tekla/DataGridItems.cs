@@ -11,7 +11,9 @@ namespace Cad_to_tekla
 {
     internal class DataGridItems : INotifyPropertyChanged
     {
-       public string Symbol { set; get; }
+       
+       public string rowNo {  set; get; }
+        public string Symbol { set; get; }
         public string TeklaProfiles { set; get; }
         public string Material { set; get; }
         public string CurrentTeklaProfiles { set; get; }

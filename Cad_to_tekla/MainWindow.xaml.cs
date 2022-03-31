@@ -15,7 +15,7 @@ using System.Windows.Shapes;
 using System.Data;
 using System.Collections;
 using Tekla.Structures;
-using td= Tekla.Structures.Drawing;
+//using td= Tekla.Structures.Drawing;
 using Tekla.Structures.Geometry3d;
 using t3d = Tekla.Structures.Geometry3d;
 using Tekla.Structures.Model;
@@ -28,11 +28,23 @@ using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using System.Runtime.Caching;
 using Microsoft.Win32.SafeHandles;
-using Render;
+//using Render;
 using System.Runtime.InteropServices;
-using Tekla.Structures.Dialog.UIControls;
+//using Tekla.Structures.Dialog.UIControls;
 using Tekla.Structures.Catalogs;
 using System.ComponentModel;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.ApplicationServices;
+
+using Autodesk.AutoCAD.Runtime;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Windows;
+//using DXFImportForm;
+using dxf =netDxf;
+
+using Tesseract;
+using System.Reflection;
 
 namespace Cad_to_tekla
 {
@@ -41,8 +53,8 @@ namespace Cad_to_tekla
 	/// <summary>
 	/// Interaction logic for MainWindow.xaml
 	/// </summary>
-	public partial class MainWindow : Window 
-	{
+	public partial class MainWindow : System.Windows.Window
+    {
 		//[DllImport("USER32.DLL", CharSet = CharSet.Unicode)]
 		//public static extern IntPtr FindWindow(string lpClassName,
 		//  string lpWindowName);
@@ -166,7 +178,7 @@ namespace Cad_to_tekla
 		// get path after selecting file
 		private void getRefrenceattributePath()
 		{
-			OpenFileDialog DWg_fileDialog = new OpenFileDialog();
+            System.Windows.Forms.OpenFileDialog DWg_fileDialog = new System.Windows.Forms.OpenFileDialog();
 			//DWg_fileDialog.Filter = "*.DWg";
 			DWg_fileDialog.ShowDialog();
 			DWg_fileDialog.RestoreDirectory = true;
@@ -197,9 +209,10 @@ namespace Cad_to_tekla
 			_referenceOrgin = input.PickPoint();
 			if (_referencePath != "")
 			{
+				
 				referenceModel.Filename = _referencePath;
 				referenceModel.Position = _referenceOrgin;
-				referenceModel.Rotation = _referenceRotaion;
+				//referenceModel.Rotation = _referenceRotaion;
 				referenceModel.Scale = _refenceScale;
 				referenceModel.Insert();
 
@@ -218,11 +231,12 @@ namespace Cad_to_tekla
 				{
 					_referenceRotaion = 90;
 				}
+				
 				if (cb_flip.IsChecked == true)
 				{
 					_referenceRotaion += 180;
 				}
-				referenceModel.Rotation = _referenceRotaion;
+				//referenceModel.Rotation = _referenceRotaion;
 				referenceModel.Position = _referenceOrgin;
 				referenceModel.Modify();
 
@@ -262,11 +276,11 @@ namespace Cad_to_tekla
 				for (int i = 0; i < data.Count(); i++)
 				{
 					DataGridItems element = data.ElementAt(i);
-					cachedData.Add(element.Symbol + "," + element.TeklaProfiles + "," + element.Material);
+					cachedData.Add( element.Symbol + "," + element.TeklaProfiles + "," + element.Material );
 				}
 				File.WriteAllLines(filep, cachedData.ToArray());
 			}
-			catch (Exception)
+			catch (System.Exception)
 			{
 
 			}
@@ -290,7 +304,9 @@ namespace Cad_to_tekla
 					{
 						TeklaProfiles = loadedData[1],
 						Symbol = loadedData[0],
-						Material = loadedData[2]
+						Material = loadedData[2],
+						//rowNo = loadedData[3]
+						
 					};
 					gridItems.Add(item);
 
@@ -311,9 +327,9 @@ namespace Cad_to_tekla
         // run modify model to move all object in center line of each other
         private void tb_modifyModel_Click(object sender, RoutedEventArgs e)
         {
-            pro_modify.Visibility = Visibility.Visible;
-            tx_progressbarPres.Visibility = Visibility.Visible;
-            worker.RunWorkerAsync();
+            pro_modify.Visibility = System.Windows.Visibility.Visible;
+            tx_progressbarPres.Visibility = System.Windows.Visibility.Visible;
+			worker.RunWorkerAsync();
         }
 
 		// put all object in sepretaed phases after finishing modifing it
@@ -375,7 +391,7 @@ namespace Cad_to_tekla
 			List<Beam> vlBracing;
 			ModelObjectEnumerator me2;
 			t3d.Point p1, p2;
-			Solid partsolid;
+			Tekla.Structures.Model.Solid partsolid;
 			int done = 0;
 
 
@@ -534,7 +550,7 @@ namespace Cad_to_tekla
 
 
 
-			Solid mainBeamSoild = mainBeam.GetSolid();
+			Tekla.Structures.Model.Solid mainBeamSoild = mainBeam.GetSolid();
 
 			CoordinateSystem MainBeam_coordinateSystem = mainBeam.GetCoordinateSystem();
 			GeometricPlane geometricPlane_mainBeam_1 = new GeometricPlane(MainBeam_coordinateSystem.Origin, MainBeam_coordinateSystem.AxisX, MainBeam_coordinateSystem.AxisY);
@@ -877,8 +893,8 @@ namespace Cad_to_tekla
 		private void worker_runworkerComplete(object sender, RunWorkerCompletedEventArgs e)
 		{
 			pro_modify.Value = 0;
-			pro_modify.Visibility = Visibility.Hidden;
-			tx_progressbarPres.Visibility = Visibility.Hidden;
+            pro_modify.Visibility = System.Windows.Visibility.Hidden;
+			tx_progressbarPres.Visibility = System.Windows.Visibility.Hidden;
 		}
 
 		void worker_DoWork(object sender, DoWorkEventArgs e)
@@ -921,7 +937,7 @@ namespace Cad_to_tekla
 					Dispatcher.BeginInvoke(new updatePresetage(update_progressbar_presentage), new object[] { i.ToString() + "% " });
 
 				}
-				catch (Exception)
+				catch (System.Exception)
 				{
 
 				}
@@ -955,7 +971,7 @@ namespace Cad_to_tekla
             //{
             //    thread.Start();
             //}
-            //catch (Exception)
+            //catch (System.Exception)
             //{
 
 
@@ -971,7 +987,7 @@ namespace Cad_to_tekla
                 Dispatcher.BeginInvoke(new EnableButtoms(Disable_Enable_bottoms), new object[] { false });
                 insertBeam();
             }
-            catch (Exception)
+            catch (System.Exception)
             {
 
             }
@@ -1024,7 +1040,7 @@ namespace Cad_to_tekla
 
 				}
 			}
-			catch (Exception)
+			catch (System.Exception)
 			{
 				Dispatcher.BeginInvoke(new EnableButtoms(Disable_Enable_bottoms), new object[] { true });
 
@@ -1040,7 +1056,9 @@ namespace Cad_to_tekla
 			tb_PickLines_Panel.IsEnabled = enable;
 		}
 
-		private void cm_beamAtt_SelectionChanged(object sender, SelectionChangedEventArgs e)
+      
+
+        private void cm_beamAtt_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			selectedAttribure = cm_beamAtt.SelectedItem.ToString();
 
@@ -1079,7 +1097,7 @@ namespace Cad_to_tekla
                 Dispatcher.BeginInvoke(new EnableButtoms(Disable_Enable_bottoms), new object[] { false });
                 inserPanel();
             }
-            catch (Exception)
+            catch (System.Exception)
             {
 
             }
@@ -1163,7 +1181,7 @@ namespace Cad_to_tekla
 
 
 			}
-			catch (Exception)
+			catch (System.Exception)
 			{
 				Dispatcher.BeginInvoke(new EnableButtoms(Disable_Enable_bottoms), new object[] { true });
 
@@ -1171,7 +1189,9 @@ namespace Cad_to_tekla
 			}
 		}
 
-		private void tb_PickLines_Panel_Click(object sender, RoutedEventArgs e)
+    
+
+        private void tb_PickLines_Panel_Click(object sender, RoutedEventArgs e)
 		{
 			TeklaModel.GetWorkPlaneHandler().SetCurrentTransformationPlane(new TransformationPlane());
 			thread = new Thread(pickingLinesThreadPanel);
@@ -1179,13 +1199,16 @@ namespace Cad_to_tekla
 			thread.Start();
 		}
 
-		private void cm_panelAtt_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        
+
+        private void cm_panelAtt_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			selectedAttriburePanel = cm_panelAtt.SelectedItem.ToString();
 
 		}
 
-		public t3d.Point getmidpoint(t3d.Point p1, t3d.Point p2)
+
+        public t3d.Point getmidpoint(t3d.Point p1, t3d.Point p2)
 		{
 			double dis = t3d.Distance.PointToPoint(p1, p2);
 			t3d.Vector vec = new t3d.Vector(p2 - p1); vec.Normalize();
@@ -1201,7 +1224,20 @@ namespace Cad_to_tekla
 			cacheData(modelPath + "//cachedData.ibim");
 
 		}
-		private List<string> GetAttributeFiles(string fileExtn)
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+			List<DataGridItems> gridItems = new List<DataGridItems>() ;
+			//DataGridItems item1 = new DataGridItems()
+			//;
+			
+
+			//gridItems.Add(item1);
+			dt_data.ItemsSource= null;
+			dt_data.ItemsSource= gridItems;
+		}
+
+        private List<string> GetAttributeFiles(string fileExtn)
 		{
 			List<string> files = new List<string>();
 			List<string> localAttributes = Directory.GetFiles(attributePath, fileExtn).ToList();
@@ -1301,14 +1337,496 @@ namespace Cad_to_tekla
 
 		}
 
-		#endregion
+        #endregion
 
 
 
+        #region readFromImage
+        private void LoadImageToText(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Windows.Forms.OpenFileDialog DWg_fileDialog = new System.Windows.Forms.OpenFileDialog();
+                DWg_fileDialog.ShowDialog();
+                DWg_fileDialog.RestoreDirectory = true;
+                string path = DWg_fileDialog.FileName;
+                List<List<string>> data_t = new List<List<string>>();
+                List<string> data_t_textLine = new List<string>();
+
+                ////loadDataFromImage(path);
+                //string path1 = System.IO.Path.Combine(Environment.CurrentDirectory, @"", "eng");
+                //string path2 = @"./tessdata";
+
+                //string path1 = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, LocalConstants.EMAIL_PATH, @"tessdata");
+                //System.Windows.Forms.MessageBox.Show(path1);
+                //using (var engine = new TesseractEngine(@"./tessdata", "eng", EngineMode.Default))
+
+                using (var engine = new TesseractEngine(@"", "eng", EngineMode.Default))
+                {
+                    using (var img = Pix.LoadFromFile(path))
+                    {
+                        using (Tesseract.Page page = engine.Process(img))
+                        {
+                            ResultIterator res = page.GetIterator();
+                            bool con = true;
+                            res.Begin();
+                            int blockNum = 0;
+                            while (res.Next(PageIteratorLevel.Block))
+                            {
+                                blockNum++;
+                            }
+                            res.Begin();
+                            int lineskNum = 0;
+                            while (res.Next(PageIteratorLevel.TextLine))
+                            {
+                                lineskNum++;
+                            }
+                            res.Begin();
+
+                            //if (blockNum == lineskNum)
+                            {
+                                int inputCell = 0;
+                                while (con)
+                                {
+
+
+                                    string BlockData = res.GetText(PageIteratorLevel.Block);
+
+
+                                    BlockData = BlockData.Replace("\n", ",");
+                                    BlockData = BlockData.Trim();
+                                    //BlockData = BlockData.Replace(" ", "");
+                                    List<string> blocks = BlockData.Split(',').ToList<string>();
+                                    blocks.RemoveAll(string.IsNullOrEmpty);
+                                    blocks.TrimExcess();
+                                    if (blocks.Count > 0)
+                                    {
+                                        for (int i = 0; i < blocks.Count; i++)
+                                        {
+                                            data_t_textLine.Add(blocks[i]);
+                                        }
+                                    }
+                                    con = res.Next(PageIteratorLevel.Block);
+
+                                }
+                                if (cb_addToSymbol.IsChecked.Value) inputCell++;
+                                if (cb_addToMaterial.IsChecked.Value) inputCell++;
+                                if (cb_addToTeklaProfile.IsChecked.Value) inputCell++;
+
+                                int f = (int)(data_t_textLine.Count / inputCell);
+                                int n = 0;
+                                bool increaseID = false;
+
+                                List<DataGridItems> gridItems = (List<DataGridItems>)dt_data.ItemsSource;
+                                int i1 = 0;
+                                for (int l = 0; l < data_t_textLine.Count / inputCell; l++)
+                                {
+                                    int num = 0;
+                                    if (tx_cellNO.Text != "")
+                                    {
+                                        num = int.Parse(tx_cellNO.Text);
+                                    }
+
+                                    {
+
+
+                                        DataGridItems item = new DataGridItems();
+                                        int id = 0;
+                                        if (cb_addToSymbol.IsChecked.Value)
+                                        {
+                                            if ((data_t_textLine.Count > l + id))
+                                            {
+                                                item.Symbol = data_t_textLine[l];
+                                                //id++;
+                                                n = 1;
+                                                increaseID = true;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (gridItems.Count >= num + l + 1)
+                                            {
+                                                item.Symbol = gridItems[num + l].Symbol;
+                                            }
+                                        }
+
+                                        if (cb_addToTeklaProfile.IsChecked.Value)
+                                        {
+                                            if ((data_t_textLine.Count > l + f * n + id))
+                                            {
+                                                item.TeklaProfiles = data_t_textLine[l + f * n + id];
+                                                //                                    if (!increaseID)
+                                                //                                    {
+                                                //	id++;
+                                                //}
+                                                if (n == 1)
+                                                {
+                                                    n = 2;
+                                                }
+                                                else
+                                                {
+                                                    n = 1;
+                                                }
+
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (gridItems.Count >= num + l + 1)
+                                            {
+                                                item.TeklaProfiles = gridItems[num + l].TeklaProfiles;
+                                            }
+                                        }
+
+                                        if (cb_addToMaterial.IsChecked.Value)
+                                        {
+                                            if (data_t_textLine.Count > l + f * n + id)
+                                            {
+                                                item.Material = data_t_textLine[l + f * n + id];
+                                                //id++; 
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (gridItems.Count >= num + l + 1)
+                                            {
+                                                item.Material = gridItems[num + l].Material;
+                                            }
+                                        }
+
+                                        if (gridItems.Count <= num + i1)
+                                        {
+                                            gridItems.Add(item);
+                                        }
+                                        else
+                                        {
+                                            gridItems[num + i1] = item;
+                                        }
+                                        i1++;
+                                    }
+                                    dt_data.ItemsSource = null;
+                                    dt_data.ItemsSource = gridItems;
+                                }
+
+
+                            }
+                            //while (con)
+                            //                     {
+
+
+                            //	string BlockData =	res.GetText(PageIteratorLevel.Block);
+                            //	string add =	res.GetText(PageIteratorLevel.TextLine);
+                            //	string add1 =	res.GetText(PageIteratorLevel.Para);
+                            //	string add2=	res.GetText(PageIteratorLevel.Word);
+                            //	string add3 =	res.GetText(PageIteratorLevel.Symbol);
+
+                            //	BlockData =	BlockData.Replace("\n", ",");
+                            //	BlockData=	BlockData.Replace(" ", "");
+                            //	List < string> blocks = BlockData.Split(',').ToList<string>();
+                            //	blocks.RemoveAll(string.IsNullOrEmpty);
+
+                            //	//blocks.Remove(" ");
+                            //	blocks.TrimExcess();
+                            //                         if (blocks.Count>0)
+                            //                         {
+                            //		data_t.Add(blocks);
+                            //	}
+                            //	con = res.Next(PageIteratorLevel.TextLine);
+
+                            //}
+
+                            //var text = page.GetText();
+
+
+                        }
+                    }
+                }
+                //List<DataGridItems> gridItems = (List<DataGridItems>)dt_data.ItemsSource;
+                //List<DataGridItems> newGridItems =new List<DataGridItems>();
+
+                //	if (data_t[0] != null)
+                //             {
+                //		int num = 0;
+                //		if (tx_cellNO.Text != "")
+                //		{
+                //			num = int.Parse(tx_cellNO.Text);
+                //		}
+                //		for (int i = 0; i < data_t[0].Count; i++)
+                //                 {
+
+                //                     int id = 0;
+                //                     DataGridItems item = new DataGridItems();
+
+                //                     if (cb_addToSymbol.IsChecked.Value)
+                //                     {
+                //                        item.Symbol = data_t[id][i];
+                //				id++;
+                //                     }
+                //                     else
+                //                     {
+                //                         if (gridItems.Count >= num+i+1)
+                //                         {
+                //					item.Symbol = gridItems[num+i].Symbol;
+                //				}
+                //			}
+                //                     if (cb_addToTeklaProfile.IsChecked.Value)
+                //                     {
+                //				item.TeklaProfiles =(data_t[id][i]);
+                //				id++;
+                //                     }
+                //			else
+                //			{
+                //				if (gridItems.Count >= num + i+1)
+                //				{
+                //					item.TeklaProfiles = gridItems[num+i].TeklaProfiles;
+                //				}
+                //			}
+                //			if (cb_addToMaterial.IsChecked.Value)
+                //                     {
+                //				item.Material=(data_t[id][i]);
+                //				id++;
+                //                     }
+                //			else
+                //			{
+                //				if (gridItems.Count >= num + i+1)
+                //				{
+                //					item.Material = gridItems[num+i].Material;
+                //				}
+                //			}
+
+                //			if (gridItems.Count <= num + i)
+                //			{
+                //				gridItems.Add(item);
+                //			}
+                //			else
+                //			{
+                //				gridItems[num + i] = item;
+                //			}
+                //		}
+                //		dt_data.ItemsSource = null;
+                //		dt_data.ItemsSource = gridItems;
+                //	}
 
 
 
+                //loadDataFromImage(path);
 
+
+            }
+            catch (System.Exception e2)
+            {
+
+                System.Windows.Forms.MessageBox.Show(e2.Message.ToString());
+            }
+
+
+
+        }
+
+
+        private void addDataToDataGrid_T(List<string> dataToBeAdded)
+        {
+            List<DataGridItems> gridItems = (List<DataGridItems>)dt_data.ItemsSource;
+
+            int devide = 0;
+            if (cb_addToMaterial.IsChecked.Value)
+            {
+                devide++;
+
+            }
+            if (cb_addToSymbol.IsChecked.Value)
+            {
+                devide++;
+
+            }
+            if (cb_addToTeklaProfile.IsChecked.Value)
+            {
+                devide++;
+
+            }
+            int numberOfTable_row = dataToBeAdded.Count / devide;
+            for (int i = 0; i < numberOfTable_row; i++)
+            {
+
+                int num = 1;
+                if (tx_cellNO.Text != "")
+                {
+                    num = int.Parse(tx_cellNO.Text);
+                }
+                int counter = 0;
+
+                DataGridItems item = new DataGridItems();
+
+                if (cb_addToSymbol.IsChecked.Value)
+                {
+                    if (dataToBeAdded[i] != null)
+                    {
+                        item.Symbol = dataToBeAdded[i];
+                        counter = numberOfTable_row;
+                    }
+                }
+                if (cb_addToTeklaProfile.IsChecked.Value)
+                {
+                    if (dataToBeAdded[i + counter] != null)
+                    {
+                        item.TeklaProfiles = dataToBeAdded[i + counter];
+                        counter = numberOfTable_row + counter;
+                    }
+                }
+                if (cb_addToMaterial.IsChecked.Value)
+                {
+                    if (dataToBeAdded[i + counter] != null)
+                    {
+                        item.Material = dataToBeAdded[i + counter];
+                    }
+                }
+                if (gridItems.Count <= num + i)
+                {
+                    gridItems.Add(item);
+                }
+                else
+                {
+                    gridItems[num + i] = item;
+                }
+            }
+            dt_data.ItemsSource = null;
+            dt_data.ItemsSource = gridItems;
+        }
+
+        //     private void loadDataFromImage(string path)
+        //     {
+        //OcrResult.Block[] blocks;
+        //OcrResult.Paragraph[] paragraphs;
+
+        //List<int> noOfLines = new List<int>();
+        //OcrResult Result;
+        //int numberOfBlocks, numberOfParagraphs, numberOfTable_column, numberOfTable_row, most;
+        //var Ocr = new IronTesseract();
+        //if (path != "" && input != null)
+        //         {
+        //             using (var Input = new OcrInput(path))
+        //             {
+
+        //                 Result = Ocr.Read(Input);
+        //                 blocks = Result.Blocks;
+        //                 paragraphs = Result.Paragraphs;
+
+
+        //                 numberOfBlocks = blocks.Count();
+        //                 numberOfParagraphs = paragraphs.Count();
+        //                 numberOfTable_column = 0;
+        //                 numberOfTable_row = 0;
+
+
+        //                 if (numberOfBlocks == numberOfParagraphs)
+        //                 {
+
+        //                     numberOfTable_column = numberOfBlocks;
+        //                     numberOfTable_row = blocks[0].Lines.Count();
+        //                 }
+
+        //                 else
+        //                 {
+        //                     for (int i = 0; i < blocks.Count(); i++)
+        //                     {
+        //                         noOfLines.Add(blocks[i].Lines.Count());
+        //                     }
+        //                     for (int i = 0; i < paragraphs.Count(); i++)
+        //                     {
+        //                         noOfLines.Add(paragraphs[i].Lines.Count());
+        //                     }
+
+        //                     most = (from i in noOfLines
+        //                             group i by i into grp
+        //                             orderby grp.Count() descending
+        //                             select grp.Key).First();
+
+        //                     numberOfTable_row = most;
+
+        //                 }
+
+        //             }
+
+        //             List<OcrResult.Line> dataToBeAdded = new List<OcrResult.Line>();
+        //             for (int i = 0; i < blocks.Count(); i++)
+        //             {
+        //                 OcrResult.Line[] lines = blocks[i].Lines;
+        //                 dataToBeAdded.AddRange(lines);
+
+        //             }
+
+        //	addDataToDataGrid(numberOfTable_row, dataToBeAdded);
+        //         }
+
+        //     }
+        //private void addDataToDataGrid(int numberOfTable_row, List<OcrResult.Line> dataToBeAdded)
+        //{
+        //	List<DataGridItems> gridItems = (List<DataGridItems>)dt_data.ItemsSource;
+
+        //	for (int i = 0; i < numberOfTable_row; i++)
+        //	{
+        //		int num = 1;
+        //		if (tx_cellNO.Text != "")
+        //		{
+        //			num = int.Parse(tx_cellNO.Text);
+        //		}
+        //		int counter = 0;
+
+        //		DataGridItems item = new DataGridItems();
+
+        //		if (cb_addToSymbol.IsChecked.Value)
+        //		{
+        //			if (dataToBeAdded[i].Text != null)
+        //			{
+        //				item.Symbol = dataToBeAdded[i].Text;
+        //				counter = numberOfTable_row;
+        //			}
+        //		}
+        //		if (cb_addToTeklaProfile.IsChecked.Value)
+        //		{
+        //			if (dataToBeAdded[i + counter].Text != null)
+        //			{
+        //				item.TeklaProfiles = dataToBeAdded[i + counter].Text;
+        //				counter = numberOfTable_row + counter;
+        //			}
+        //		}
+        //		if (cb_addToMaterial.IsChecked.Value)
+        //		{
+        //			if (dataToBeAdded[i + counter].Text != null)
+        //			{
+        //				item.Material = dataToBeAdded[i + counter].Text;
+        //			}
+        //		}
+        //		if (gridItems.Count <= num + i)
+        //		{
+        //			gridItems.Add(item);
+        //		}
+        //		else
+        //		{
+        //			gridItems[num + i] = item;
+        //		}
+        //	}
+        //	dt_data.ItemsSource = null;
+        //	dt_data.ItemsSource = gridItems;
+        //}
+
+        private void dt_data_AddingNewItem(object sender, AddingNewItemEventArgs e)
+        {
+
+        }
+
+
+        private void dt_data_LoadingRow(object sender, DataGridRowEventArgs e)
+        {
+
+            e.Row.Header = (e.Row.GetIndex()).ToString();
+        }
+
+
+
+        #endregion
+       
+		
 		private void Button_Click(object sender, RoutedEventArgs e)
         {
 
@@ -1358,7 +1876,7 @@ namespace Cad_to_tekla
 		private static void fitBeam(Beam bb, t3d.Point p,t3d.Vector x ,t3d.Vector y )
 		{
 			Fitting fitting = new Fitting();
-			Plane plane = new Plane();
+            Tekla.Structures.Model.Plane plane = new Tekla.Structures.Model.Plane();
 			plane.Origin = p;
 			plane.AxisX = x;
 			plane.AxisY = y;
@@ -1369,46 +1887,93 @@ namespace Cad_to_tekla
 
 
 
-  
+
 
 		private void Button_Click1(object sender, RoutedEventArgs e)
-        {
+		{
+            try
+            {
+				var masterDb = Editor().Document.Database;
+				var masterDir = GetDbDirectory(masterDb);
+				//object t = input.PickObject(Picker.PickObjectEnum.PICK_ONE_OBJECT);
+				//ObjectId id = Entity.FromAcadObject(t);
+				//Line2d l = new Line2d();
 
-			ArrayList line1 = input.PickLine("Pick first line");
-			ArrayList line2 = input.PickLine("Pick secend line");
+			}
+            catch (System.Exception)
+            {
 
-			Beam panel = new Beam(Beam.BeamTypeEnum.PANEL);
-
-
-			panel.Profile.ProfileString = "C200*200";
-			panel.Material.MaterialString = material;
+                throw;
+            }
 
 
 
-			panel.StartPoint = line1[0] as t3d.Point;
-			panel.EndPoint = line2[1] as t3d.Point;
-			panel.Insert();
+			//RXClass  p Entity=Entity.GetClass(t.GetType());
+			//string path = "C:\\Users\\amin\\Downloads\\21-S-013-DWG-403-1.dxf";
+			//dxf.DxfDocument dxf1 = dxf.DxfDocument.Load(path);
+			//IEnumerable<dxf.Entities.Line> s = dxf1.Lines;
+			//int FF = s.Count();
+		}
+		public static string GetDbDirectory(Database dbMaster)
+		{
+			var fullPath = dbMaster.Filename;
+			var fileName = System.IO.Path.GetFileName(fullPath);
 
-			//for (int i = 0; i < 100; i++)
-			//{
-			//	pro_modify.Value++;
-			//	Thread.Sleep(100);
-			//}
-			//allModelBeamsSize = 920;
-   //         pro_counter = 0;
-   //         BackgroundWorker worker = new BackgroundWorker();
-   //         worker.RunWorkerCompleted += worker_runworkerComplete;
-   //         worker.WorkerReportsProgress = true;
-   //         //worker.DoWork += worker_DoWork;
-   //         worker.ProgressChanged += worker_ProgressChanged;
-   //         worker.RunWorkerAsync();
+			// .dwt is template file name of unsaved drawing.
+			if (!fileName.EndsWith(".dwt"))
+			{
+				return System.IO.Path.GetDirectoryName(fullPath);
+			}
 
-         
-        }
+			return String.Empty;
+		}
+		static private Editor Editor()
+		{
+			return Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor;
+		}
+		//Editor ed = System.Windows.Forms.Application.DocumentManager.MdiActiveDocument.Editor;
+		////Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+		//// pick entity to add data to! 
 
-    
+		//PromptEntityResult getEntityResult = ed.GetEntity("Pick an entity to add an Extension Dictionary to : ");
 
-      
-		
+
+
+		////ArrayList line1 = input.PickLine("Pick first line");
+		////ArrayList line2 = input.PickLine("Pick secend line");
+
+		//Beam panel = new Beam(Beam.BeamTypeEnum.PANEL);
+
+
+		//panel.Profile.ProfileString = "C200*200";
+		//panel.Material.MaterialString = material;
+
+
+
+		//panel.StartPoint = line1[0] as t3d.Point;
+		//panel.EndPoint = line2[1] as t3d.Point;
+		//panel.Insert();
+
+		//for (int i = 0; i < 100; i++)
+		//{
+		//	pro_modify.Value++;
+		//	Thread.Sleep(100);
+		//}
+		//allModelBeamsSize = 920;
+		//         pro_counter = 0;
+		//         BackgroundWorker worker = new BackgroundWorker();
+		//         worker.RunWorkerCompleted += worker_runworkerComplete;
+		//         worker.WorkerReportsProgress = true;
+		//         //worker.DoWork += worker_DoWork;
+		//         worker.ProgressChanged += worker_ProgressChanged;
+		//         worker.RunWorkerAsync();
+
+
+		//}
+
+
+
+
+
 	}
 }
